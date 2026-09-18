@@ -1,10 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import API from '../services/api';
 import { Link } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import Rating from '../components/Rating';
+
+// إصلاح أيقونات الخريطة في React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const Home = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Alle');
+
+  const erlangenCenter = [49.5897, 11.0039];
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -20,10 +35,18 @@ const Home = () => {
     fetchListings();
   }, []);
 
+  // تصفية النتائج بناءً على البحث والفئة
+  const filteredListings = listings.filter((item) => {
+    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'Alle' || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
   return (
     <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', paddingBottom: '60px' }}>
       
-      {/* Hero Banner - Deutsch */}
+      {/* Hero Banner */}
       <div 
         className="text-white text-center py-5 mb-5 shadow-sm"
         style={{
@@ -47,12 +70,80 @@ const Home = () => {
       <div className="container">
         <div className="row g-4">
           
-          {/* Main Listings Column */}
+          {/* Main Content Column */}
           <div className="col-lg-8">
+            
+            {/* Map Section */}
+            <div className="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+              <div className="card-body p-3 bg-white">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <h6 className="fw-bold text-dark m-0 d-flex align-items-center" style={{ fontSize: '0.95rem' }}>
+                    <span className="me-2">🗺️</span> Interaktive Karte - Erlangen
+                  </h6>
+                  <span className="badge bg-light text-secondary border fw-normal" style={{ fontSize: '0.75rem' }}>
+                    Live Standorte
+                  </span>
+                </div>
+                <div style={{ height: '180px', width: '100%', borderRadius: '10px', overflow: 'hidden' }}>
+                  <MapContainer 
+                    center={erlangenCenter} 
+                    zoom={13} 
+                    scrollWheelZoom={false} 
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={erlangenCenter}>
+                      <Popup>
+                        <strong>Erlangen Zentrum</strong><br />
+                        Aktive Food-Saving Zone 🥖
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Search & Filter Bar Section */}
+            <div className="card border-0 shadow-sm rounded-4 mb-4">
+              <div className="card-body p-3">
+                <div className="row g-2">
+                  <div className="col-md-7">
+                    <div className="input-group">
+                      <span className="input-group-text bg-white border-end-0 rounded-start-3 text-muted">🔍</span>
+                      <input
+                        type="text"
+                        className="form-control border-start-0 py-2 rounded-end-3"
+                        placeholder="Lebensmittel suchen..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-5">
+                    <select
+                      className="form-select py-2 rounded-3 text-secondary fw-semibold"
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                      <option value="Alle">جميع الفئات (Alle Kategorien)</option>
+                      <option value="Bäckerei">🥖 Backwaren (مخبوزات)</option>
+                      <option value="Obst & Gemüse">🍎 Obst & Gemüse (فواكه وخضار)</option>
+                      <option value="Gekochtes">🍲 Gekochte Speisen (وجبات مطبوخة)</option>
+                      <option value="Sonstiges">📦 Sonstiges (أخرى)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Listings Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <h3 className="fw-bold text-dark m-0">📍 Verfügbare Lebensmittel in Erlangen</h3>
+              <h3 className="fw-bold text-dark m-0">📍 Verfügbare Lebensmittel</h3>
               <span className="badge bg-success fs-6 px-3 py-2 rounded-pill">
-                {listings.length} Angebote aktiv
+                {filteredListings.length} Angebote
               </span>
             </div>
 
@@ -63,11 +154,11 @@ const Home = () => {
                 </div>
                 <p className="mt-2 text-muted">Angebote werden geladen...</p>
               </div>
-            ) : listings.length === 0 ? (
+            ) : filteredListings.length === 0 ? (
               <div className="card border-0 shadow-sm text-center p-5 rounded-4">
-                <div className="fs-1 mb-3">🥖</div>
-                <h5 className="fw-bold text-secondary">Derzeit sind keine Angebote verfügbar.</h5>
-                <p className="text-muted">Seien Sie der Erste, der ein Angebot in Ihrer Gemeinschaft teilt!</p>
+                <div className="fs-1 mb-3">🔍</div>
+                <h5 className="fw-bold text-secondary">Keine passenden Angebote gefunden.</h5>
+                <p className="text-muted">Versuchen Sie einen anderen Suchbegriff oder erstellen Sie ein neues Angebot.</p>
                 <div>
                   <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
                     Lebensmittel anbieten
@@ -76,7 +167,7 @@ const Home = () => {
               </div>
             ) : (
               <div className="row g-3">
-                {listings.map((item) => (
+                {filteredListings.map((item) => (
                   <div key={item.id} className="col-md-6">
                     <div className="card h-100 border-0 shadow-sm rounded-4 hover-shadow transition-all overflow-hidden">
                       <div className="card-body p-4 d-flex flex-column justify-content-between">
@@ -100,6 +191,9 @@ const Home = () => {
                             <small className="text-secondary fw-semibold">
                               👤 Spender: <span className="text-dark">{item.donor_name || 'Anonym'}</span>
                             </small>
+                            <div className="mt-1">
+                            <Rating initialRating={item.rating || 5} />
+</div>
                           </div>
                           <button className="btn btn-success w-100 fw-bold py-2 rounded-3">
                             Reservieren
@@ -113,9 +207,9 @@ const Home = () => {
             )}
           </div>
 
-          {/* Sidebar Dashboard Column */}
+          {/* Sidebar Column */}
           <div className="col-lg-4">
-            {/* Impact Dashboard - Deutsch */}
+            {/* Impact Dashboard */}
             <div className="card border-0 shadow-sm rounded-4 mb-4">
               <div className="card-body p-4">
                 <h5 className="fw-bold text-dark mb-4 d-flex align-items-center">
@@ -144,7 +238,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Quick Navigation Card - Deutsch */}
+            {/* Quick Navigation Card */}
             <div className="card border-0 shadow-sm rounded-4">
               <div className="card-body p-4">
                 <h6 className="fw-bold text-dark mb-3">Schnelllinks</h6>
