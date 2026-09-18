@@ -2,11 +2,16 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const db = require('./config/db');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
+// Middlewares (يجب تنظيمها قبل المسارات)
 app.use(cors());
 app.use(express.json());
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 // مسار الفحص
 app.get('/api/health', (req, res) => {
