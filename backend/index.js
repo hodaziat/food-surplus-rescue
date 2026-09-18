@@ -1,15 +1,27 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const db = require('./config/db');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// مسار تجريبي للتأكد من عمل السيرفر
+// مسار الفحص
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Food Surplus Rescue Server is running!' });
+});
+
+// مسار اختبار قاعدة البيانات
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const result = await db.query('SELECT NOW()');
+    res.json({ message: 'DB connection successful', time: result.rows[0].now });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
 });
 
 const PORT = process.env.PORT || 5000;
