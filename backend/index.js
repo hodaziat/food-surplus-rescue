@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const db = require('./config/db');
 const authRoutes = require('./routes/auth');
+const foodRoutes = require('./routes/food');
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/food', foodRoutes);
 
 // مسار الفحص
 app.get('/api/health', (req, res) => {
