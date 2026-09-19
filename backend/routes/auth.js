@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+
 // Register API
 router.post('/register', async (req, res) => {
     const { name, email, password, role } = req.body;
@@ -14,14 +15,23 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email is already registered' });
         }
 
+        // تحديد الدور: إذا كان البريد هو بريدك الإلكتروني الإداري، اجعله أدمن تلقائياً
+        // استبدل 'zaid.asaad.zoq@gmail.com' بريدك الذي ستسجل به
+        let assignedRole = role || 'user';
+        const adminEmail = 'zaid.asaad.zoa@gmail.com'; 
+
+        if (email.trim().toLowerCase() === adminEmail.toLowerCase()) {
+            assignedRole = 'admin';
+        }
+
         // 2. تشفير كلمة السر
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. إضافة المستخدم إلى قاعدة البيانات
+        // 3. إضافة المستخدم إلى قاعدة البيانات بالدور المحدد (assignedRole)
         const newUser = await pool.query(
             'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
-            [name, email, hashedPassword, role || 'donor']
+            [name, email, hashedPassword, assignedRole]
         );
 
         // 4. إنتاج Token

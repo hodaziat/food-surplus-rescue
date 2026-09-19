@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import API from '../services/api';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'donor'
+    role: 'user' // القيمة الافتراضية للعميل
   });
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +17,8 @@ const Register = () => {
       const res = await API.post('/auth/register', formData);
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
-      navigate('/');
+      // استخدام window.location.href لتحديث الصفحة بالكامل وتفعيل الـ Navbar فوراً
+      window.location.href = '/';
     } catch (err) {
       setError(err.response?.data?.error || 'Registrierung fehlgeschlagen.');
     }
@@ -63,11 +63,11 @@ const Register = () => {
             value={formData.role}
             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
           >
-            <option value="donor">Spender (Donor)</option>
-            <option value="recipient">Empfänger (Recipient)</option>
+            <option value="user">Verbraucher / Kunde (Consumer)</option>
+            <option value="donor">Spender / Restaurant (Donor)</option>
           </select>
         </div>
-        <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#198754', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           Registrieren
         </button>
       </form>

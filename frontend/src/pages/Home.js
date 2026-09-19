@@ -19,6 +19,10 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Alle');
 
+  // قراءة المستخدم الحالي من الـ LocalStorage لمعرفة دوره
+  const storedUser = localStorage.getItem('user');
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+
   const erlangenCenter = [49.5897, 11.0039];
 
   useEffect(() => {
@@ -34,6 +38,20 @@ const Home = () => {
     };
     fetchListings();
   }, []);
+
+  // دالة الحذف الخاصة بالأدمن
+  const handleDelete = async (id) => {
+    if (window.confirm('Möchten Sie dieses Angebot wirklich löschen?')) {
+      try {
+        await API.delete(`/food/${id}`);
+        // تحديث القائمة محلياً لتختفي البطاقة فوراً
+        setListings(listings.filter((item) => item.id !== id));
+      } catch (err) {
+        console.error('Fehler beim Löschen:', err);
+        alert('Fehler beim Löschen des Angebots.');
+      }
+    }
+  };
 
   // تصفية النتائج بناءً على البحث والفئة
   const filteredListings = listings.filter((item) => {
@@ -61,13 +79,21 @@ const Home = () => {
           <p className="lead fs-4 mb-4 text-light opacity-90">
             Gemeinsam gegen Lebensmittelverschwendung. Retten Sie frische Lebensmittel in Ihrer Nähe.
           </p>
-          <Link to="/add-food" className="btn btn-warning btn-lg fw-bold px-4 py-2 shadow-sm text-dark">
-            Jetzt Angebot erstellen
-          </Link>
+
+          {/* الزر الديناميكي حسب نوع المستخدم */}
+          {(!currentUser || currentUser.role === 'donor') ? (
+            <Link to="/add-food" className="btn btn-warning btn-lg fw-bold px-4 py-2 shadow-sm text-dark">
+              ➕ Jetzt Angebot erstellen
+            </Link>
+          ) : (
+            <a href="#listings-section" className="btn btn-warning btn-lg fw-bold px-4 py-2 shadow-sm text-dark">
+              🔍 Verfügbare Angebote durchstöbern
+            </a>
+          )}
         </div>
       </div>
 
-      <div className="container">
+      <div className="container" id="listings-section">
         <div className="row g-4">
           
           {/* Main Content Column */}
@@ -128,7 +154,7 @@ const Home = () => {
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
                     >
-                      <option value="Alle">جميع الفئات (Alle Kategorien)</option>
+                      <option value="Alle">Alle Kategorien (جميع الفئات)</option>
                       <option value="Bäckerei">🥖 Backwaren (مخبوزات)</option>
                       <option value="Obst & Gemüse">🍎 Obst & Gemüse (فواكه وخضار)</option>
                       <option value="Gekochtes">🍲 Gekochte Speisen (وجبات مطبوخة)</option>
@@ -158,7 +184,7 @@ const Home = () => {
               <div className="card border-0 shadow-sm text-center p-5 rounded-4">
                 <div className="fs-1 mb-3">🔍</div>
                 <h5 className="fw-bold text-secondary">Keine passenden Angebote gefunden.</h5>
-                <p className="text-muted">Versuchen Sie einen anderen Suchbegriff oder erstellen Sie ein neues Angebot.</p>
+                <p className="text-muted">Versuchen Sie einen anderen Suchbegriff أو erstellen Sie ein neues Angebot.</p>
                 <div>
                   <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
                     Lebensmittel anbieten
@@ -176,9 +202,23 @@ const Home = () => {
                             <span className="badge bg-success-subtle text-success fw-bold fs-6 px-3 py-2 rounded-pill">
                               📦 {item.quantity}
                             </span>
-                            <small className="text-danger fw-semibold bg-danger-subtle px-2 py-1 rounded">
-                              ⌛ Bis: {new Date(item.expiration_date).toLocaleDateString()}
-                            </small>
+                            
+                            <div className="d-flex align-items-center gap-2">
+                              <small className="text-danger fw-semibold bg-danger-subtle px-2 py-1 rounded">
+                                ⌛ Bis: {new Date(item.expiration_date).toLocaleDateString()}
+                              </small>
+
+                              {/* زر الحذف يظهر فقط إذا كان المستخدم الحالي Admin */}
+                              {currentUser && currentUser.role === 'admin' && (
+                                <button 
+                                  onClick={() => handleDelete(item.id)}
+                                  className="btn btn-outline-danger btn-sm border-0 py-0 px-1"
+                                  title="Angebot löschen (Admin)"
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <h4 className="card-title fw-bold text-dark mb-2">{item.title}</h4>
                           <p className="card-text text-muted mb-3" style={{ fontSize: '0.95rem' }}>
@@ -192,8 +232,8 @@ const Home = () => {
                               👤 Spender: <span className="text-dark">{item.donor_name || 'Anonym'}</span>
                             </small>
                             <div className="mt-1">
-                            <Rating initialRating={item.rating || 5} />
-</div>
+                              <Rating initialRating={item.rating || 5} />
+                            </div>
                           </div>
                           <button className="btn btn-success w-100 fw-bold py-2 rounded-3">
                             Reservieren
