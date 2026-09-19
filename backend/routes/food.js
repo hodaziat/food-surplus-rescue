@@ -40,4 +40,25 @@ router.get('/', async (req, res) => {
     }
 });
 
+// 3. حذف إعلان طعام (Delete Food Listing - Admin Only)
+router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const deleteListing = await pool.query(
+            'DELETE FROM food_listings WHERE id = $1 RETURNING *',
+            [id]
+        );
+
+        if (deleteListing.rows.length === 0) {
+            return res.status(404).json({ error: 'Food listing not found' });
+        }
+
+        res.json({ message: 'Food listing deleted successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error while deleting food listing' });
+    }
+});
+
 module.exports = router;

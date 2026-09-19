@@ -184,7 +184,7 @@ const Home = () => {
               <div className="card border-0 shadow-sm text-center p-5 rounded-4">
                 <div className="fs-1 mb-3">🔍</div>
                 <h5 className="fw-bold text-secondary">Keine passenden Angebote gefunden.</h5>
-                <p className="text-muted">Versuchen Sie einen anderen Suchbegriff أو erstellen Sie ein neues Angebot.</p>
+                <p className="text-muted">Versuchen Sie einen anderen Suchbegriff oder erstellen Sie ein neues Angebot.</p>
                 <div>
                   <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
                     Lebensmittel anbieten
@@ -278,23 +278,23 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Quick Navigation Card */}
+            {/* Quick Navigation Card (تم تعديل الروابط هنا لتستخدم Link بدلاً من a والـ href) */}
             <div className="card border-0 shadow-sm rounded-4">
               <div className="card-body p-4">
                 <h6 className="fw-bold text-dark mb-3">Schnelllinks</h6>
                 <div className="list-group list-group-flush">
-                  <a href="#profile" className="list-group-item list-group-item-action border-0 px-0 text-secondary fw-semibold">
+                  <Link to="/profile" className="list-group-item list-group-item-action border-0 px-0 text-secondary fw-semibold text-decoration-none">
                     👤 Mein Profil
-                  </a>
-                  <a href="#reservations" className="list-group-item list-group-item-action border-0 px-0 text-secondary fw-semibold">
+                  </Link>
+                  <Link to="/reservations" className="list-group-item list-group-item-action border-0 px-0 text-secondary fw-semibold text-decoration-none">
                     📜 Meine Reservierungen
-                  </a>
-                  <a href="#partners" className="list-group-item list-group-item-action border-0 px-0 text-secondary fw-semibold">
+                  </Link>
+                  <Link to="/partners" className="list-group-item list-group-item-action border-0 px-0 text-secondary fw-semibold text-decoration-none">
                     🤝 Soziale Partner
-                  </a>
-                  <a href="#settings" className="list-group-item list-group-item-action border-0 px-0 text-secondary fw-semibold">
+                  </Link>
+                  <Link to="/settings" className="list-group-item list-group-item-action border-0 px-0 text-secondary fw-semibold text-decoration-none">
                     ⚙️ Einstellungen
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

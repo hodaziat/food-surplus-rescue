@@ -18,7 +18,7 @@ router.post('/register', async (req, res) => {
         // تحديد الدور: إذا كان البريد هو بريدك الإلكتروني الإداري، اجعله أدمن تلقائياً
         // استبدل 'zaid.asaad.zoq@gmail.com' بريدك الذي ستسجل به
         let assignedRole = role || 'user';
-        const adminEmail = 'zaid.asaad.zoa@gmail.com'; 
+        const adminEmail = 'zaid.asaad.zoq@gmail.com'; 
 
         if (email.trim().toLowerCase() === adminEmail.toLowerCase()) {
             assignedRole = 'admin';

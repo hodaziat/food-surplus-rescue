@@ -5,5 +5,8 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm run dev",
     "client": "cd frontend && npm start"
+  },
+  "dependencies": {
+    "react-icons": "^5.7.0"
   }
 }

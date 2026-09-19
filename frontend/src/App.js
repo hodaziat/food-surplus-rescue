@@ -7,6 +7,13 @@ import Register from './pages/Register';
 import AddFood from './pages/AddFood';
 import Footer from './components/Footer';
 import About from './pages/About';
+import Services from './pages/Services';
+import Contact from './pages/Contact';
+import Profile from './pages/Profile';
+import Reservations from './pages/Reservations';
+import Partners from './pages/Partners';
+import Settings from './pages/Settings';
+
 
 function App() {
   return (
@@ -20,6 +27,12 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/add-food" element={<AddFood />} />
             <Route path="/about" element={<About />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/reservations" element={<Reservations />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </div>
         <Footer />
