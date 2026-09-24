@@ -80,8 +80,8 @@ const Home = () => {
             Gemeinsam gegen Lebensmittelverschwendung. Retten Sie frische Lebensmittel in Ihrer Nähe.
           </p>
 
-          {/* الزر الديناميكي حسب نوع المستخدم */}
-          {(!currentUser || currentUser.role === 'donor') ? (
+          {/* الزر الديناميكي حسب نوع المستخدم: يظهر فقط إذا كان donor */}
+          {currentUser && currentUser.role === 'donor' ? (
             <Link to="/add-food" className="btn btn-warning btn-lg fw-bold px-4 py-2 shadow-sm text-dark">
               ➕ Jetzt Angebot erstellen
             </Link>
@@ -184,12 +184,15 @@ const Home = () => {
               <div className="card border-0 shadow-sm text-center p-5 rounded-4">
                 <div className="fs-1 mb-3">🔍</div>
                 <h5 className="fw-bold text-secondary">Keine passenden Angebote gefunden.</h5>
-                <p className="text-muted">Versuchen Sie einen anderen Suchbegriff oder erstellen Sie ein neues Angebot.</p>
-                <div>
-                  <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
-                    Lebensmittel anbieten
-                  </Link>
-                </div>
+                <p className="text-muted">Versuchen Sie einen anderen Suchbegriff.</p>
+                {/* زر إضافة عرض يظهر فقط للـ donor */}
+                {currentUser && currentUser.role === 'donor' && (
+                  <div>
+                    <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
+                      Lebensmittel anbieten
+                    </Link>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="row g-3">
@@ -278,7 +281,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Quick Navigation Card (تم تعديل الروابط هنا لتستخدم Link بدلاً من a والـ href) */}
+            {/* Quick Navigation Card */}
             <div className="card border-0 shadow-sm rounded-4">
               <div className="card-body p-4">
                 <h6 className="fw-bold text-dark mb-3">Schnelllinks</h6>
