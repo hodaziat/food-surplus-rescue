@@ -7,7 +7,7 @@ const foodRoutes = require('./routes/food');
 
 const app = express();
 
-// Middlewares (يجب تنظيمها قبل المسارات)
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
@@ -15,12 +15,12 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/food', foodRoutes);
 
-// مسار الفحص
+//  الفحص
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Food Surplus Rescue Server is running!' });
 });
 
-// مسار اختبار قاعدة البيانات
+//  اختبار قاعدة البيانات
 app.get('/api/test-db', async (req, res) => {
   try {
     const result = await db.query('SELECT NOW()');

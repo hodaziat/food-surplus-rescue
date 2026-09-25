@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 
-// 1. إضافة إعلان طعام جديد (Create Food Listing)
+// 1. إضافة إعلان طعام جديد
 router.post('/add', async (req, res) => {
     const { donor_id, title, description, quantity, expiration_date } = req.body;
 
@@ -21,8 +21,7 @@ router.post('/add', async (req, res) => {
         res.status(500).json({ error: 'Server error while adding food listing' });
     }
 });
-
-// 2. جلب جميع الإعلانات المتاحة (Get All Available Food Listings)
+// 2. جلب جميع الإعلانات المتاحة 
 router.get('/', async (req, res) => {
     try {
         const listings = await pool.query(
@@ -40,7 +39,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 3. حذف إعلان طعام (Delete Food Listing - Admin Only)
+// 3. حذف إعلان طعام 
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 

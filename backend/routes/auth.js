@@ -15,8 +15,6 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email is already registered' });
         }
 
-        // تحديد الدور: إذا كان البريد هو بريدك الإلكتروني الإداري، اجعله أدمن تلقائياً
-        // استبدل 'zaid.asaad.zoq@gmail.com' بريدك الذي ستسجل به
         let assignedRole = role || 'user';
         const adminEmail = 'zaid.asaad.zoq@gmail.com'; 
 
@@ -28,13 +26,13 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. إضافة المستخدم إلى قاعدة البيانات بالدور المحدد (assignedRole)
+        // 3. إضافة المستخدم إلى قاعدة البيانات بالدور المحدد
         const newUser = await pool.query(
             'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
             [name, email, hashedPassword, assignedRole]
         );
 
-        // 4. إنتاج Token
+        // 4.  Token
         const token = jwt.sign(
             { id: newUser.rows[0].id, role: newUser.rows[0].role },
             process.env.JWT_SECRET,
@@ -72,7 +70,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
 
-        // 3. إنتاج Token
+        // 3.  Token
         const token = jwt.sign(
             { id: user.id, role: user.role },
             process.env.JWT_SECRET,
