@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import API from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 
-const Login = () => {
+const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -11,8 +11,18 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await API.post('/auth/login', formData);
-      localStorage.setItem('token', res.data.token);
+      
+      // التخزين المباشر في localStorage بحسب أسلوب الأستاذ
+      localStorage.setItem('token', res.data.token || 'true');
+      const userName = res.data.user?.name || res.data.user?.email || 'User';
+      localStorage.setItem('username', userName);
       localStorage.setItem('user', JSON.stringify(res.data.user));
+
+      // تحديث الحالة في App.js وإعادة التوجيه
+      if (onLogin) {
+        onLogin(userName);
+      }
+
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Daten.');
