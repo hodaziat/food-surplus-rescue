@@ -5,6 +5,9 @@ const Profile = () => {
     const storedUser = localStorage.getItem('user');
     const user = storedUser ? JSON.parse(storedUser) : null;
 
+    // قراءة الدور سواء كان مخزناً بـ role أو user_role أو وضع قيمة افتراضية
+    const userRole = user?.role || user?.user_role || 'Nutzer';
+
     return (
         <Container className="py-5">
             <Card className="border-0 shadow-sm p-4 mx-auto" style={{ maxWidth: '600px' }}>
@@ -13,7 +16,7 @@ const Profile = () => {
                     <div>
                         <p><strong>Name:</strong> {user.name}</p>
                         <p><strong>E-Mail:</strong> {user.email}</p>
-                        <p><strong>Rolle:</strong> {user.role}</p>
+                        <p><strong>Rolle:</strong> {userRole}</p>
                     </div>
                 ) : (
                     <p className="text-muted">Kein Benutzer angemeldet.</p>

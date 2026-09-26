@@ -9,10 +9,18 @@ const loginUser = async (req, res) => {
             return res.status(400).json({ message: 'User not found' });
         }
         
-        // إرجاع بيانات المستخدم (أو الـ token)
+        const userData = user.rows[0];
+
+        // إرجاع بيانات المستخدم شاملة الدور والتوكين
         res.json({
             message: 'Login successful',
-            user: { id: user.rows[0].id, name: user.rows[0].name, email: user.rows[0].email }
+            token: 'jwt_token_example', // أو التوكين الخاص بكِ
+            user: { 
+                id: userData.id, 
+                name: userData.name, 
+                email: userData.email,
+                role: userData.role || userData.user_role || 'donor' // أضفنا حقل الـ role هنا
+            }
         });
     } catch (err) {
         console.error(err.message);
