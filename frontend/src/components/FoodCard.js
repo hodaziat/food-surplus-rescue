@@ -1,7 +1,50 @@
 import React from 'react';
 import Rating from './Rating';
+import API from '../services/api';
 
-const FoodCard = ({ item, currentUser, handleDelete }) => {
+const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
+  // قراءة بيانات المستخدم الحالي من localStorage في حال عدم إرساله كـ Prop
+  const storedUser = localStorage.getItem('user');
+  const user = currentUser || (storedUser ? JSON.parse(storedUser) : null);
+
+  // التحقق هل المستخدم الحالي هو صاحب الوجبة (المتبرع)
+  const isOwner = user && (
+    user.id === item.donor_id || 
+    user.name === item.donor_name || 
+    user.name === item.spender
+  );
+
+  // دالة التعامل مع الحجز
+  const handleReserve = async () => {
+    if (!user) {
+      alert('Bitte melden Sie sich an, um zu reservieren.');
+      return;
+    }
+
+    try {
+      await API.post('/reservations/add', {
+        food_id: item.id,
+        receiver_id: user.id
+      });
+      alert('Reservierung erfolgreich!');
+
+      // إطلاق حدث لتحديث عداد السلة في الـ Navbar فوراً بدون إعادة تحميل الصفحة
+      window.dispatchEvent(new Event('updateCart'));
+
+      if (onReserveSuccess) {
+        onReserveSuccess();
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Fehler bei der Reservierung.');
+    }
+  };
+
+  // تنسيق التاريخ بشكل آمن
+  const formattedDate = item.expiration_date || item.expiry_date
+    ? new Date(item.expiration_date || item.expiry_date).toLocaleDateString('de-DE')
+    : 'k.A.';
+
   return (
     <div className="col-md-6">
       <div className="card h-100 border-0 shadow-sm rounded-4 hover-shadow transition-all overflow-hidden">
@@ -14,10 +57,10 @@ const FoodCard = ({ item, currentUser, handleDelete }) => {
               
               <div className="d-flex align-items-center gap-2">
                 <small className="text-danger fw-semibold bg-danger-subtle px-2 py-1 rounded">
-                  ⌛ Bis: {new Date(item.expiration_date).toLocaleDateString()}
+                  ⌛ Bis: {formattedDate}
                 </small>
 
-                {currentUser && currentUser.role === 'admin' && (
+                {user && user.role === 'admin' && (
                   <button 
                     onClick={() => handleDelete(item.id)}
                     className="btn btn-outline-danger btn-sm border-0 py-0 px-1"
@@ -37,15 +80,26 @@ const FoodCard = ({ item, currentUser, handleDelete }) => {
             <hr className="my-3 opacity-10" />
             <div className="d-flex justify-content-between align-items-center mb-3">
               <small className="text-secondary fw-semibold">
-                👤 Spender: <span className="text-dark">{item.donor_name || 'Anonym'}</span>
+                👤 Spender: <span className="text-dark">{item.donor_name || item.spender || 'Anonym'}</span>
               </small>
               <div className="mt-1">
                 <Rating initialRating={item.rating || 5} />
               </div>
             </div>
-            <button className="btn btn-success w-100 fw-bold py-2 rounded-3">
-              Reservieren
-            </button>
+
+            {/* التحكم في زر الحجز بحسب هوية المستخدم */}
+            {isOwner ? (
+              <button className="btn btn-secondary w-100 fw-bold py-2 rounded-3" disabled>
+                Ihr eigenes Angebot
+              </button>
+            ) : (
+              <button 
+                onClick={handleReserve} 
+                className="btn btn-success w-100 fw-bold py-2 rounded-3"
+              >
+                Reservieren
+              </button>
+            )}
           </div>
         </div>
       </div>

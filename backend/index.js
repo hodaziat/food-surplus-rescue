@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const db = require('./config/db');
+
+// استدعاء المسارات بأسماء الملفات الحقيقية الموجودة في المجلد
 const authRoutes = require('./routes/auth');
 const foodRoutes = require('./routes/food');
 const reservationRoutes = require('./routes/reservation');
@@ -17,12 +19,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/reservations', reservationRoutes);
 
-//  الفحص
+// الفحص
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Food Surplus Rescue Server is running!' });
 });
 
-//  اختبار قاعدة البيانات
+// اختبار قاعدة البيانات
 app.get('/api/test-db', async (req, res) => {
   try {
     const result = await db.query('SELECT NOW()');

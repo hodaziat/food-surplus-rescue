@@ -9,6 +9,8 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(''); // إعادة إرسال الحالة لتفادي بقاء الأخطاء القديمة
+    
     try {
       const res = await API.post('/auth/login', formData);
       
@@ -25,7 +27,9 @@ const Login = ({ onLogin }) => {
 
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Daten.');
+      // فحص كلاً من message و error لإظهار الخطأ القادم من Backend بدقة
+      const backendMessage = err.response?.data?.message || err.response?.data?.error;
+      setError(backendMessage || 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Daten.');
     }
   };
 

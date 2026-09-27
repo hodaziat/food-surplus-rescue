@@ -15,17 +15,19 @@ const Home = () => {
   const storedUser = localStorage.getItem('user');
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
 
+  // دالة جلب العروض لإمكانية استدعائها عند تحميل الصفحة أو بعد الحجز مباشرة
+  const fetchListings = async () => {
+    try {
+      const res = await API.get('/food');
+      setListings(res.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der Angebote:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const res = await API.get('/food');
-        setListings(res.data);
-      } catch (err) {
-        console.error('Fehler beim Laden der Angebote:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchListings();
   }, []);
 
@@ -100,12 +102,13 @@ const Home = () => {
             ) : (
               <div className="row g-3">
                 {filteredListings.map((item) => (
-                  /* 4. بطاقة المنتج المنفصلة */
+                  /* 4. بطاقة المنتج المنفصلة مع إرسال onReserveSuccess */
                   <FoodCard 
                     key={item.id} 
                     item={item} 
                     currentUser={currentUser} 
-                    handleDelete={handleDelete} 
+                    handleDelete={handleDelete}
+                    onReserveSuccess={fetchListings}
                   />
                 ))}
               </div>

@@ -14,7 +14,7 @@ import Reservations from './pages/Reservations';
 import Partners from './pages/Partners';
 import Settings from './pages/Settings';
 
-// مكون حماية المسارات على طريقة الأستاذ المباشرة
+// مكون حماية المسارات (ProtectedRoute)
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -40,6 +40,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('user');
     setUser(null);
   };
 
@@ -49,7 +50,7 @@ function App() {
         <Navbar user={user} onLogout={handleLogout} />
         <div className="flex-grow-1">
           <Routes>
-            {/* مسارات عامة */}
+            {/* المسارات العامة */}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
@@ -58,9 +59,17 @@ function App() {
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/register" element={<Register />} />
 
-            {/* مسارات محمية بأسلوب الأستاذ */}
+            {/* المسارات المحمية مع دعم اسمي المسار للإضافة */}
             <Route 
               path="/add-food" 
+              element={
+                <ProtectedRoute>
+                  <AddFood />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/add-listing" 
               element={
                 <ProtectedRoute>
                   <AddFood />

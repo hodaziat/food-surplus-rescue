@@ -1,18 +1,66 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import API from '../services/api';
 
 const Navbar = () => {
-  const navigate = useNavigate();
-  
-  // قراءة بيانات المستخدم من الـ LocalStorage
-  const storedUser = localStorage.getItem('user');
-  const user = storedUser ? JSON.parse(storedUser) : null;
+  const [reservationCount, setReservationCount] = useState(0);
+
+  // دالة جلب عدد الحجوزات
+  const fetchReservationCount = useCallback(async () => {
+    const storedUser = localStorage.getItem('user');
+    const user = storedUser ? JSON.parse(storedUser) : null;
+
+    if (!user || !user.id) {
+      setReservationCount(0);
+      return;
+    }
+
+    try {
+      const res = await API.get(`/reservations/user/${user.id}`);
+      if (Array.isArray(res.data)) {
+        setReservationCount(res.data.length);
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der Reservierungsanzahl:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReservationCount();
+
+    const handleCartUpdate = () => {
+      fetchReservationCount();
+    };
+
+    // الاستماع لحدث نافذة المتصفح المباشر
+    window.addEventListener('updateCart', handleCartUpdate);
+
+    // الاستماع لقناة BroadcastChannel المباشرة
+    let channel;
+    try {
+      channel = new BroadcastChannel('cart_channel');
+      channel.onmessage = () => {
+        fetchReservationCount();
+      };
+    } catch (e) {
+      console.log(e);
+    }
+
+    return () => {
+      window.removeEventListener('updateCart', handleCartUpdate);
+      if (channel) channel.close();
+    };
+  }, [fetchReservationCount]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('username');
     localStorage.removeItem('user');
     window.location.href = '/';
   };
+
+  const storedUser = localStorage.getItem('user');
+  const user = storedUser ? JSON.parse(storedUser) : null;
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
@@ -53,31 +101,31 @@ const Navbar = () => {
           {/* Right Side Actions */}
           <div className="d-flex align-items-center gap-3">
             
-            {/* إذا كان المستخدم مسجل الدخول */}
             {user ? (
               <>
-                {/* عرض رابط "إضافة عرض" فقط إذا كان المستخدم Spender/Donor */}
                 {user.role === 'donor' && (
                   <Link to="/add-listing" className="btn btn-success btn-sm fw-semibold">
                     ➕ Angebot erstellen
                   </Link>
                 )}
 
-                {/* عرض سلة الحجوزات للعميل العادي user */}
                 {user.role === 'user' && (
-                  <Link to="/reservations" className="btn btn-outline-success btn-sm">
+                  <Link to="/reservations" className="btn btn-outline-success btn-sm position-relative">
                     🛒 Reservierungen
+                    {reservationCount > 0 && (
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {reservationCount}
+                      </span>
+                    )}
                   </Link>
                 )}
 
-                {/* ترحيب بالمستخدم وزر تسجيل الخروج */}
                 <span className="text-muted small fw-semibold">Hallo, {user.name}</span>
                 <button onClick={handleLogout} className="btn btn-outline-danger btn-sm">
                   Abmelden
                 </button>
               </>
             ) : (
-              /* إذا لم يكن المستخدم مسجل الدخول */
               <>
                 <Link to="/login" className="btn btn-outline-dark btn-sm">
                   Anmelden

@@ -7,20 +7,27 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user' // القيمة الافتراضية للعميل
+    role: 'user' // القيمة الافتراضية للمستهلك
   });
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     try {
       const res = await API.post('/auth/register', formData);
-      localStorage.setItem('token', res.data.token);
+      
+      // تخزين التوكين والبيانات القادمة من الـ Backend
+      localStorage.setItem('token', res.data.token || 'true');
+      const userName = res.data.user?.name || res.data.user?.email || formData.name || 'User';
+      localStorage.setItem('username', userName);
       localStorage.setItem('user', JSON.stringify(res.data.user));
-      // استخدام window.location.href لتحديث الصفحة بالكامل وتفعيل الـ Navbar فوراً
+
       window.location.href = '/';
     } catch (err) {
-      setError(err.response?.data?.error || 'Registrierung fehlgeschlagen.');
+      const backendMessage = err.response?.data?.message || err.response?.data?.error;
+      setError(backendMessage || 'Registrierung fehlgeschlagen.');
     }
   };
 
@@ -38,6 +45,7 @@ const Register = () => {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
         </div>
+
         <div style={{ marginBottom: '15px' }}>
           <label>E-Mail-Adresse:</label>
           <input
@@ -47,6 +55,7 @@ const Register = () => {
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
         </div>
+
         <div style={{ marginBottom: '15px' }}>
           <label>Passwort:</label>
           <input
@@ -56,6 +65,7 @@ const Register = () => {
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           />
         </div>
+
         <div style={{ marginBottom: '15px' }}>
           <label>Rolle:</label>
           <select
@@ -67,6 +77,7 @@ const Register = () => {
             <option value="donor">Spender / Restaurant (Donor)</option>
           </select>
         </div>
+
         <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#198754', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           Registrieren
         </button>
