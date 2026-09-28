@@ -13,6 +13,8 @@ import Profile from './pages/Profile';
 import Reservations from './pages/Reservations';
 import Partners from './pages/Partners';
 import Settings from './pages/Settings';
+import FoodDetails from './pages/FoodDetails';
+import SpecialRequest from './pages/SpecialRequest';
 
 // مكون حماية المسارات (ProtectedRoute)
 const ProtectedRoute = ({ children }) => {
@@ -58,6 +60,8 @@ function App() {
             <Route path="/partners" element={<Partners />} />
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/food/:id" element={<FoodDetails />} />
+            <Route path="/special-request" element={<SpecialRequest />} />
 
             {/* المسارات المحمية مع دعم اسمي المسار للإضافة */}
             <Route 

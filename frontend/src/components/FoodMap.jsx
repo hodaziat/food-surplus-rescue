@@ -10,8 +10,11 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const FoodMap = () => {
+const FoodMap = ({ foodListings = [] }) => {
   const erlangenCenter = [49.5897, 11.0039];
+  
+  // هل الخريطة تعرض وجبة واحدة فقط (صفحة التفاصيل)؟
+  const isSingleItem = foodListings.length === 1;
 
   return (
     <div className="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
@@ -24,7 +27,7 @@ const FoodMap = () => {
             Live Standorte
           </span>
         </div>
-        <div style={{ height: '180px', width: '100%', borderRadius: '10px', overflow: 'hidden' }}>
+        <div style={{ height: '280px', width: '100%', borderRadius: '10px', overflow: 'hidden' }}>
           <MapContainer 
             center={erlangenCenter} 
             zoom={13} 
@@ -35,12 +38,44 @@ const FoodMap = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <Marker position={erlangenCenter}>
-              <Popup>
-                <strong>Erlangen Zentrum</strong><br />
-                Aktive Food-Saving Zone 🥖
-              </Popup>
-            </Marker>
+            
+            {foodListings.length > 0 ? (
+              foodListings.map((item, index) => {
+                const position = [
+                  item.lat || item.latitude || (erlangenCenter[0] + (index * 0.002)), 
+                  item.lng || item.longitude || (erlangenCenter[1] + (index * 0.002))
+                ];
+
+                return (
+                  <Marker 
+                    key={item.id || index} 
+                    position={position}
+                    eventHandlers={{
+                      add: (e) => {
+                        // يفتح النافذة تلقائياً فقط إذا كان العنصر معروضاً لوحده (في صفحة التفاصيل)
+                        if (isSingleItem) {
+                          e.target.openPopup();
+                        }
+                      },
+                    }}
+                  >
+                    <Popup autoPan={false}>
+                      <strong>{item.title}</strong><br />
+                      👤 {item.donor_name || item.spender || 'Anonym'}<br />
+                      📍 {item.location || 'Erlangen Stadtmitte'}
+                    </Popup>
+                  </Marker>
+                );
+              })
+            ) : (
+              /* دبوس افتراضي في الرئيسية لا يفتح تلقائياً */
+              <Marker position={erlangenCenter}>
+                <Popup autoPan={false}>
+                  <strong>Erlangen Zentrum</strong><br />
+                  Aktive Food-Saving Zone 🥖
+                </Popup>
+              </Marker>
+            )}
           </MapContainer>
         </div>
       </div>

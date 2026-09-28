@@ -91,6 +91,11 @@ const Navbar = () => {
               <Link className="nav-link fw-semibold" to="/services">Dienstleistungen</Link>
             </li>
             <li className="nav-item">
+              <Link className="nav-link fw-semibold text-success" to="/special-request">
+                🤝 Sonderanfragen
+              </Link>
+            </li>
+            <li className="nav-item">
               <Link className="nav-link fw-semibold" to="/about">Über uns</Link>
             </li>
             <li className="nav-item">

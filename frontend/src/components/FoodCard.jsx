@@ -1,11 +1,13 @@
 import React from 'react';
 import Rating from './Rating';
 import API from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
   // قراءة بيانات المستخدم الحالي من localStorage في حال عدم إرساله كـ Prop
   const storedUser = localStorage.getItem('user');
   const user = currentUser || (storedUser ? JSON.parse(storedUser) : null);
+  const navigate = useNavigate();
 
   // التحقق هل المستخدم الحالي هو صاحب الوجبة (المتبرع)
   const isOwner = user && (
@@ -46,7 +48,7 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
     : 'k.A.';
 
   return (
-    <div className="col-md-6">
+    <div className="col-md-6 mb-4">
       <div className="card h-100 border-0 shadow-sm rounded-4 hover-shadow transition-all overflow-hidden">
         <div className="card-body p-4 d-flex flex-column justify-content-between">
           <div>
@@ -76,6 +78,7 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
               {item.description || 'Keine weitere Beschreibung vorhanden.'}
             </p>
           </div>
+
           <div>
             <hr className="my-3 opacity-10" />
             <div className="d-flex justify-content-between align-items-center mb-3">
@@ -87,19 +90,28 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
               </div>
             </div>
 
-            {/* التحكم في زر الحجز بحسب هوية المستخدم */}
-            {isOwner ? (
-              <button className="btn btn-secondary w-100 fw-bold py-2 rounded-3" disabled>
-                Ihr eigenes Angebot
-              </button>
-            ) : (
+            {/* الأزرار: زر التفاصيل + زر الحجز */}
+            <div className="d-flex gap-2">
               <button 
-                onClick={handleReserve} 
-                className="btn btn-success w-100 fw-bold py-2 rounded-3"
+                onClick={() => navigate(`/food/${item.id}`)}
+                className="btn btn-outline-success fw-bold py-2 rounded-3 flex-fill"
               >
-                Reservieren
+                🔍 Details
               </button>
-            )}
+
+              {isOwner ? (
+                <button className="btn btn-secondary fw-bold py-2 rounded-3 flex-fill" disabled>
+                  Ihr Angebot
+                </button>
+              ) : (
+                <button 
+                  onClick={handleReserve} 
+                  className="btn btn-success fw-bold py-2 rounded-3 flex-fill"
+                >
+                  Reservieren
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
