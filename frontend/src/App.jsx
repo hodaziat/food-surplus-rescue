@@ -15,6 +15,7 @@ import Partners from './pages/Partners';
 import Settings from './pages/Settings';
 import FoodDetails from './pages/FoodDetails';
 import SpecialRequest from './pages/SpecialRequest';
+import EditFood from './pages/EditFood';
 
 // مكون حماية المسارات (ProtectedRoute)
 const ProtectedRoute = ({ children }) => {
@@ -62,6 +63,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/food/:id" element={<FoodDetails />} />
             <Route path="/special-request" element={<SpecialRequest />} />
+            <Route path="/edit-food/:id" element={<EditFood />} />
 
             {/* المسارات المحمية مع دعم اسمي المسار للإضافة */}
             <Route 

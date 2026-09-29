@@ -7,10 +7,22 @@ const AddFood = () => {
     title: '',
     description: '',
     quantity: '',
-    expiration_date: ''
+    expiration_date: '',
+    price: '0',
+    original_price: '0'
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,10 +33,25 @@ const AddFood = () => {
       return;
     }
 
+    // بناء FormData لإرسال البيانات مع الصورة والأسعار
+    const data = new FormData();
+    data.append('donor_id', user.id);
+    data.append('title', formData.title);
+    data.append('quantity', formData.quantity);
+    data.append('expiration_date', formData.expiration_date);
+    data.append('description', formData.description);
+    data.append('price', formData.price);
+    data.append('original_price', formData.original_price);
+
+    if (imageFile) {
+      data.append('image', imageFile);
+    }
+
     try {
-      await API.post('/food/add', {
-        ...formData,
-        donor_id: user.id
+      await API.post('/food/add', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
       navigate('/');
     } catch (err) {
@@ -49,10 +76,58 @@ const AddFood = () => {
                   <input
                     type="text"
                     className="form-control py-2 rounded-3"
-                    placeholder="z.B. Frisch gebackenes Brot"
+                    placeholder="z.B. Überraschungstüte Backwaren"
                     required
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   />
+                </div>
+
+                {/* حقول السعر والسعر الأصلي */}
+                <div className="row mb-3">
+                  <div className="col-6">
+                    <label className="form-label fw-semibold">Preis (€) (0 = Gratis)</label>
+                    <input
+                      type="number"
+                      step="0.50"
+                      min="0"
+                      className="form-control py-2 rounded-3"
+                      value={formData.price}
+                      required
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-6">
+                    <label className="form-label fw-semibold">Originalpreis (€)</label>
+                    <input
+                      type="number"
+                      step="0.50"
+                      min="0"
+                      className="form-control py-2 rounded-3"
+                      value={formData.original_price}
+                      onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* حقل اختيار الصورة مع المعاينة */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">📷 Foto des Angebots (Optional)</label>
+                  <input
+                    type="file"
+                    className="form-control py-2 rounded-3"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  {imagePreview && (
+                    <div className="mt-2 text-center">
+                      <img 
+                        src={imagePreview} 
+                        alt="Vorschau" 
+                        className="img-fluid rounded-3 shadow-sm" 
+                        style={{ maxHeight: '160px', objectFit: 'cover' }} 
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-3">

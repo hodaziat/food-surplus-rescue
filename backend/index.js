@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const db = require('./config/db');
 
@@ -13,6 +14,9 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// إتاحة مجلد الصور المرفوعة للوصول إليها عبر الرابط المباشر
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);

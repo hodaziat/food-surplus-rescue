@@ -48,6 +48,11 @@ function FoodDetails() {
     ? new Date(food.expiration_date || food.expiry_date).toLocaleDateString('de-DE')
     : 'k.A.';
 
+  // مسار الصورة المرفوعة
+  const imageUrl = food.image_url 
+    ? `http://localhost:5000${food.image_url}` 
+    : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
+
   return (
     <Container className="my-4">
       <Button variant="outline-secondary" className="mb-3" onClick={() => navigate(-1)}>
@@ -55,9 +60,22 @@ function FoodDetails() {
       </Button>
 
       <Row className="g-4">
-        {/* تفاصيل الوجبة */}
+        {/* تفاصيل الوجبة والصورة */}
         <Col md={7}>
           <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
+            {/* عرض صورة الوجبة */}
+            <div style={{ height: '280px', overflow: 'hidden', backgroundColor: '#f8f9fa' }}>
+              <img 
+                src={imageUrl} 
+                alt={food.title} 
+                className="w-100 h-100" 
+                style={{ objectFit: 'cover' }}
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
+                }}
+              />
+            </div>
+
             <Card.Body className="p-4">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="fw-bold text-dark mb-0">{food.title}</h2>
