@@ -50,7 +50,7 @@ const createReservation = async (req, res) => {
     }
 };
 
-// 2. جلب حجوزات مستخدم معّين مع إرجاع id الحجز صراحة
+// 2. جلب حجوزات مستخدم معين مع تجنيب قيم السعر الفارغة وإرجاع الصورة والأسعار
 const getUserReservations = async (req, res) => {
     const { userId } = req.params;
 
@@ -62,9 +62,14 @@ const getUserReservations = async (req, res) => {
                 reservations.food_id,
                 reservations.receiver_id,
                 reservations.reserved_at,
+                reservations.payment_method,
+                reservations.payment_status,
                 food_listings.title, 
                 food_listings.description, 
-                food_listings.quantity
+                food_listings.quantity,
+                food_listings.image_url,
+                COALESCE(food_listings.price, 0.00) AS price,
+                COALESCE(food_listings.original_price, 0.00) AS original_price
              FROM reservations 
              JOIN food_listings ON reservations.food_id = food_listings.id 
              WHERE reservations.receiver_id = $1 
@@ -84,7 +89,6 @@ const deleteReservation = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // البحث عن الحجز بواسطة المعرف المرسل (أو معرف الوجبة في حال التمرير المرن)
         let reservationCheck = await pool.query('SELECT * FROM reservations WHERE id = $1', [id]);
 
         let reservation;

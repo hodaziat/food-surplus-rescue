@@ -33,19 +33,77 @@ const Reservations = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // دالة الحذف بالمعرف الصحيح للحجز
-  const handleDeleteReservation = async (item) => {
-    const resId = item.reservation_id || item.id;
+  // دمج الوجبات المتشابهة بناءً على food_id لحساب العد بالكامل
+  const groupedReservations = Object.values(
+    reservations.reduce((acc, item) => {
+      const fId = item.food_id;
+      if (!acc[fId]) {
+        acc[fId] = {
+          ...item,
+          cartQuantity: 1,
+          reservationIds: [item.reservation_id || item.id]
+        };
+      } else {
+        acc[fId].cartQuantity += 1;
+        acc[fId].reservationIds.push(item.reservation_id || item.id);
+      }
+      return acc;
+    }, {})
+  );
 
-    if (window.confirm('Möchten Sie diese Reservierung wirklich stornieren?')) {
+  // زيادة كمية الوجبة مع مراعاة الكمية المتوفرة لدى البائع
+  const handleIncrease = async (item) => {
+    try {
+      // 1. جلب بيانات الوجبة الحالية لمعرفة الكمية المتاحة في المعرض
+      const foodRes = await API.get('/food');
+      const currentFood = foodRes.data.find((f) => String(f.id) === String(item.food_id));
+
+      const availableQty = currentFood ? parseInt(currentFood.quantity) : 0;
+
+      // 2. التحقق مما إذا كانت هناك كمية متوفرة للإضافة
+      if (availableQty <= 0) {
+        alert('Leider sind keine weiteren Portionen dieses Angebots verfügbar.');
+        return;
+      }
+
+      // 3. إضافة الحجز إذا كان متوفراً
+      await API.post('/reservations/add', {
+        food_id: item.food_id,
+        receiver_id: user.id
+      });
+
+      fetchReservations();
+      window.dispatchEvent(new Event('updateCart'));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Fehler beim Hinzufügen der Portion.');
+    }
+  };
+
+  // إنقاص قطعة واحدة من الوجبة
+  const handleDecrease = async (item) => {
+    const resIdToDelete = item.reservationIds[item.reservationIds.length - 1];
+
+    try {
+      await API.delete(`/reservations/${resIdToDelete}`);
+      fetchReservations();
+      window.dispatchEvent(new Event('updateCart'));
+    } catch (err) {
+      console.error(err);
+      alert('Fehler beim Verringern der Menge.');
+    }
+  };
+
+  // حذف جميع القطع من هذا النوع
+  const handleDeleteAllOfItem = async (item) => {
+    if (window.confirm('Möchten Sie diese Position komplett entfernen?')) {
       try {
-        setReservations((prev) => prev.filter((r) => (r.reservation_id || r.id) !== resId));
-        await API.delete(`/reservations/${resId}`);
+        await Promise.all(item.reservationIds.map((resId) => API.delete(`/reservations/${resId}`)));
+        fetchReservations();
         window.dispatchEvent(new Event('updateCart'));
       } catch (err) {
-        console.error('Fehler beim Stornieren:', err);
-        alert(err.response?.data?.error || 'Fehler beim Stornieren der Reservierung.');
-        fetchReservations();
+        console.error(err);
+        alert('Fehler beim Entfernen.');
       }
     }
   };
@@ -57,7 +115,6 @@ const Reservations = () => {
   const handleCheckout = async () => {
     setIsProcessing(true);
     try {
-      // إرسال تحديث لكل حجز بالسلة بطريقة الدفع المختارة
       await Promise.all(
         reservations.map((item) =>
           API.put(`/reservations/checkout/${item.reservation_id || item.id}`, {
@@ -85,7 +142,7 @@ const Reservations = () => {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" variant="success" />
-        <p className="mt-2 text-muted">Reservierungen werden geladen...</p>
+        <p className="mt-2 text-muted">Warenkorb wird geladen...</p>
       </Container>
     );
   }
@@ -93,31 +150,34 @@ const Reservations = () => {
   return (
     <Container className="py-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="fw-bold text-success m-0">🛒 Mein Warenkorb & Reservierungen</h2>
+        <h2 className="fw-bold text-success m-0">🛒 Mein Warenkorb</h2>
         <Badge bg="success" className="fs-6 px-3 py-2 rounded-pill">
-          {reservations.length} Artikel
+          {reservations.length} Artikel insgesamt
         </Badge>
       </div>
 
-      {reservations.length === 0 ? (
+      {groupedReservations.length === 0 ? (
         <Card className="border-0 shadow-sm p-5 text-center rounded-4">
           <div className="fs-1 mb-2">📜</div>
-          <h5 className="fw-bold text-secondary">Sie haben noch keine Lebensmittel reserviert.</h5>
+          <h5 className="fw-bold text-secondary">Ihr Warenkorb ist leer.</h5>
           <p className="text-muted">Besuchen Sie die Startseite, um verfügbare Angebote zu entdecken.</p>
         </Card>
       ) : (
         <Row className="g-4">
           
-          {/* قسم بطاقات الحجوزات */}
+          {/* قسم الوجبات المدمجة */}
           <Col lg={8}>
             <Row className="g-3">
-              {reservations.map((item) => {
-                const itemPrice = parseFloat(item.price || 0);
+              {groupedReservations.map((item) => {
+                const singlePrice = parseFloat(item.price || 0);
+                const itemTotalPrice = singlePrice * item.cartQuantity;
 
                 return (
-                  <Col key={item.reservation_id || item.id} md={12}>
+                  <Col key={item.food_id} md={12}>
                     <Card className="border-0 shadow-sm rounded-4 p-3">
                       <Card.Body className="p-0 d-flex flex-row align-items-center justify-content-between gap-3">
+                        
+                        {/* صورة ومعلومات الوجبة */}
                         <div className="d-flex align-items-center gap-3">
                           <img 
                             src={item.image_url ? `http://localhost:5000${item.image_url}` : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80'} 
@@ -126,27 +186,54 @@ const Reservations = () => {
                             style={{ width: '80px', height: '80px', objectFit: 'cover' }}
                           />
                           <div>
-                            <div className="d-flex align-items-center gap-2 mb-1">
-                              <Badge bg="success" className="rounded-pill">Reserviert</Badge>
-                              <small className="text-muted">
-                                📅 {new Date(item.reserved_at || Date.now()).toLocaleDateString('de-DE')}
-                              </small>
-                            </div>
                             <h5 className="fw-bold text-dark mb-1">{item.title}</h5>
-                            <small className="text-success fw-bold fs-6">
-                              {itemPrice === 0 ? 'GRATIS' : `${itemPrice.toFixed(2)} €`}
-                            </small>
+                            <div className="text-success fw-bold fs-6">
+                              {singlePrice === 0 ? (
+                                'GRATIS'
+                              ) : (
+                                <span>
+                                  {singlePrice.toFixed(2)} € <small className="text-muted fw-normal">(Gesamt: {itemTotalPrice.toFixed(2)} €)</small>
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        <Button 
-                          variant="outline-danger" 
-                          size="sm" 
-                          className="rounded-3 px-3 fw-semibold"
-                          onClick={() => handleDeleteReservation(item)}
-                        >
-                          🗑️ Stornieren
-                        </Button>
+                        {/* أزرار الإضافة والتنقيص والعدد */}
+                        <div className="d-flex align-items-center gap-3">
+                          <div className="d-flex align-items-center border rounded-3 p-1 bg-light">
+                            <Button 
+                              variant="light" 
+                              size="sm" 
+                              className="fw-bold px-2 py-0 border-0"
+                              onClick={() => handleDecrease(item)}
+                            >
+                              ➖
+                            </Button>
+
+                            <span className="fw-bold px-3 text-dark">{item.cartQuantity}</span>
+
+                            <Button 
+                              variant="light" 
+                              size="sm" 
+                              className="fw-bold px-2 py-0 border-0"
+                              onClick={() => handleIncrease(item)}
+                            >
+                              ➕
+                            </Button>
+                          </div>
+
+                          <Button 
+                            variant="outline-danger" 
+                            size="sm" 
+                            className="rounded-3 px-2"
+                            title="Alle entfernen"
+                            onClick={() => handleDeleteAllOfItem(item)}
+                          >
+                            🗑️
+                          </Button>
+                        </div>
+
                       </Card.Body>
                     </Card>
                   </Col>
@@ -155,14 +242,19 @@ const Reservations = () => {
             </Row>
           </Col>
 
-          {/* ملخص السلة وزر الشراء والدفع */}
+          {/* ملخص الطلب وزر الشراء والدفع */}
           <Col lg={4}>
             <Card className="border-0 shadow-sm rounded-4 p-4">
               <h5 className="fw-bold text-dark mb-3">Zusammenfassung</h5>
               
               <div className="d-flex justify-content-between mb-2">
-                <span className="text-muted">Anzahl Artikel:</span>
-                <span className="fw-semibold">{reservations.length}</span>
+                <span className="text-muted">Anzahl Positionen:</span>
+                <span className="fw-semibold">{groupedReservations.length}</span>
+              </div>
+
+              <div className="d-flex justify-content-between mb-2">
+                <span className="text-muted">Gesamtstückzahl:</span>
+                <span className="fw-semibold">{reservations.length} Stk.</span>
               </div>
 
               <div className="d-flex justify-content-between mb-3 fs-5 fw-bold">
@@ -187,7 +279,7 @@ const Reservations = () => {
         </Row>
       )}
 
-      {/* نافذة اختيار طرق الدفع عند تأكيد الشراء */}
+      {/* نافذة خيارات الدفع */}
       <Modal show={showCheckoutModal} onHide={() => setShowCheckoutModal(false)} centered>
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">💳 Zahlungsmethode wählen</Modal.Title>

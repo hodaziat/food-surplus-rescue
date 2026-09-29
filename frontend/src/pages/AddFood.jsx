@@ -11,6 +11,7 @@ const AddFood = () => {
     price: '0',
     original_price: '0'
   });
+  const [isPaid, setIsPaid] = useState(false); // التحكم في نوع العرض (مجاني أو بمبلغ)
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -24,6 +25,13 @@ const AddFood = () => {
     }
   };
 
+  const handleOfferTypeChange = (paid) => {
+    setIsPaid(paid);
+    if (!paid) {
+      setFormData((prev) => ({ ...prev, price: '0', original_price: '0' }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const user = JSON.parse(localStorage.getItem('user'));
@@ -33,15 +41,14 @@ const AddFood = () => {
       return;
     }
 
-    // بناء FormData لإرسال البيانات مع الصورة والأسعار
     const data = new FormData();
     data.append('donor_id', user.id);
     data.append('title', formData.title);
     data.append('quantity', formData.quantity);
     data.append('expiration_date', formData.expiration_date);
     data.append('description', formData.description);
-    data.append('price', formData.price);
-    data.append('original_price', formData.original_price);
+    data.append('price', isPaid ? formData.price : '0');
+    data.append('original_price', isPaid ? formData.original_price : '0');
 
     if (imageFile) {
       data.append('image', imageFile);
@@ -82,32 +89,76 @@ const AddFood = () => {
                   />
                 </div>
 
-                {/* حقول السعر والسعر الأصلي */}
-                <div className="row mb-3">
-                  <div className="col-6">
-                    <label className="form-label fw-semibold">Preis (€) (0 = Gratis)</label>
-                    <input
-                      type="number"
-                      step="0.50"
-                      min="0"
-                      className="form-control py-2 rounded-3"
-                      value={formData.price}
-                      required
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="form-label fw-semibold">Originalpreis (€)</label>
-                    <input
-                      type="number"
-                      step="0.50"
-                      min="0"
-                      className="form-control py-2 rounded-3"
-                      value={formData.original_price}
-                      onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
-                    />
+                {/* خيار تحديد نوع العرض: مجاني أم بمبلغ */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Angebotsart</label>
+                  <div className="d-flex gap-3">
+                    <div 
+                      className={`form-check flex-fill border p-3 rounded-3 cursor-pointer ${!isPaid ? 'border-success bg-success-subtle' : ''}`}
+                      onClick={() => handleOfferTypeChange(false)}
+                    >
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="offerType"
+                        id="freeOffer"
+                        checked={!isPaid}
+                        onChange={() => handleOfferTypeChange(false)}
+                      />
+                      <label className="form-check-label fw-bold cursor-pointer" htmlFor="freeOffer">
+                        🎁 Kostenlos (Gratis)
+                      </label>
+                    </div>
+
+                    <div 
+                      className={`form-check flex-fill border p-3 rounded-3 cursor-pointer ${isPaid ? 'border-success bg-success-subtle' : ''}`}
+                      onClick={() => handleOfferTypeChange(true)}
+                    >
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="offerType"
+                        id="paidOffer"
+                        checked={isPaid}
+                        onChange={() => handleOfferTypeChange(true)}
+                      />
+                      <label className="form-check-label fw-bold cursor-pointer" htmlFor="paidOffer">
+                        🏷️ Vergünstigter Preis
+                      </label>
+                    </div>
                   </div>
                 </div>
+
+                {/* حقول السعر والسعر الأصلي تظهر عند اختيار "Vergünstigter Preis" */}
+                {isPaid && (
+                  <div className="row mb-3">
+                    <div className="col-6">
+                      <label className="form-label fw-semibold">Verkaufspreis (€)</label>
+                      <input
+                        type="number"
+                        step="0.50"
+                        min="0.50"
+                        className="form-control py-2 rounded-3"
+                        placeholder="z.B. 3.50"
+                        value={formData.price}
+                        required={isPaid}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label className="form-label fw-semibold">Originalpreis (€)</label>
+                      <input
+                        type="number"
+                        step="0.50"
+                        min="0.50"
+                        className="form-control py-2 rounded-3"
+                        placeholder="z.B. 10.00"
+                        value={formData.original_price}
+                        onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* حقل اختيار الصورة مع المعاينة */}
                 <div className="mb-3">
