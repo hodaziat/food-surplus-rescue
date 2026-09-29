@@ -1,5 +1,4 @@
-import React from 'react';
-import Rating from './Rating';
+import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,6 +6,23 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
   const storedUser = localStorage.getItem('user');
   const user = currentUser || (storedUser ? JSON.parse(storedUser) : null);
   const navigate = useNavigate();
+
+  const [donorRating, setDonorRating] = useState(null);
+
+  const donorId = item.donor_id || item.user_id;
+
+  // جلب متوسط تقييم المطعم/المتبرع للكرت
+  useEffect(() => {
+    if (donorId) {
+      API.get(`/donor-reviews/${donorId}`)
+        .then((res) => {
+          setDonorRating(res.data.average_rating || null);
+        })
+        .catch((err) => {
+          console.error('Fehler beim Laden der Partner-Bewertung:', err);
+        });
+    }
+  }, [donorId]);
 
   const imageUrl = item.image_url 
     ? `http://localhost:5000${item.image_url}` 
@@ -118,8 +134,18 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
               <small className="text-secondary fw-semibold text-truncate" style={{ maxWidth: '130px' }}>
                 👤 <span className="text-dark">{item.donor_name || item.spender || 'Anonym'}</span>
               </small>
-              <div>
-                <Rating initialRating={item.rating || 5} />
+
+              {/* عرض نجوم تقييم المطعم باختصار */}
+              <div className="d-flex align-items-center gap-1">
+                <span className="text-warning fw-bold small">
+                  {donorRating && Number(donorRating) > 0 ? (
+                    <>⭐ {donorRating}</>
+                  ) : (
+                    <span className="text-muted opacity-75" style={{ fontSize: '0.75rem' }}>
+                      Neu
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
 

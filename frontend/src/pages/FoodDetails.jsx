@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Badge, Spinner } from 'react-bootstrap';
 import FoodMap from '../components/FoodMap';
+import DonorReviews from '../components/DonorReviews';
 import api from '../services/api';
 
 function FoodDetails() {
@@ -53,6 +54,10 @@ function FoodDetails() {
     ? `http://localhost:5000${food.image_url}` 
     : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
 
+  // معرف المطعم/المتبرع واسمه
+  const donorId = food.donor_id || food.user_id;
+  const donorName = food.donor_name || food.spender || 'Anonym';
+
   return (
     <Container className="my-4">
       <Button variant="outline-secondary" className="mb-3" onClick={() => navigate(-1)}>
@@ -60,7 +65,7 @@ function FoodDetails() {
       </Button>
 
       <Row className="g-4">
-        {/* تفاصيل الوجبة والصورة */}
+        {/* تفاصيل الوجبة والصورة + قسم تقييم المطعم بالكامل */}
         <Col md={7}>
           <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
             {/* عرض صورة الوجبة */}
@@ -85,7 +90,7 @@ function FoodDetails() {
               </div>
 
               <p className="text-muted mb-3">
-                👤 <strong>Spender:</strong> {food.donor_name || food.spender || 'Anonym'}
+                👤 <strong>Spender:</strong> {donorName}
               </p>
 
               <div className="bg-light p-3 rounded-3 mb-3">
@@ -116,6 +121,11 @@ function FoodDetails() {
               </Button>
             </Card.Body>
           </Card>
+
+          {/* قسم تقييم المطعم المخصص بالنجوم والتعليقات والنموذج */}
+          {donorId && (
+            <DonorReviews donorId={donorId} donorName={donorName} />
+          )}
         </Col>
 
         {/* الخريطة */}

@@ -3,6 +3,8 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 const db = require('./config/db');
+const siteReviewRoutes = require('./routes/siteReviewRoutes');
+const donorReviewRoutes = require('./routes/donorReviewRoutes');
 
 // استدعاء المسارات بأسماء الملفات الحقيقية الموجودة في المجلد
 const authRoutes = require('./routes/auth');
@@ -22,6 +24,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/site-reviews', siteReviewRoutes);
+app.use('/api/donor-reviews', donorReviewRoutes);
 
 // الفحص
 app.get('/api/health', (req, res) => {

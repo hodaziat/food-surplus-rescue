@@ -5,6 +5,7 @@ import HeroBanner from '../components/HeroBanner';
 import FoodMap from '../components/FoodMap';
 import FoodFilter from '../components/FoodFilter';
 import FoodCard from '../components/FoodCard';
+import SiteReviews from '../components/SiteReviews';
 
 const Home = () => {
   const [listings, setListings] = useState([]);
@@ -112,7 +113,7 @@ const Home = () => {
           </div>
         </div>
 
-        {/* الصف الثاني: شريط البحث والفلاتر بعرض كامل */}
+        {/* الصف الثاني: شريط البحث والفلاتر */}
         <div className="row mb-4">
           <div className="col-12">
             <FoodFilter 
@@ -124,7 +125,7 @@ const Home = () => {
           </div>
         </div>
 
-        {/* الصف الثالث: الوجبات بعرض كامل (تأخذ 3 بطاقات بصف واحد وتمر تحت الإحصائيات) */}
+        {/* الصف الثالث: الوجبات */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4 className="fw-bold text-dark m-0">📍 Verfügbare Lebensmittel</h4>
           <span className="badge bg-success fs-6 px-3 py-2 rounded-pill">
@@ -165,6 +166,11 @@ const Home = () => {
             ))}
           </div>
         )}
+
+        {/* الصف الرابع: قسم تقييمات الموقع ككل (تم إضافته هنا) */}
+        <div className="mt-5">
+          <SiteReviews />
+        </div>
 
       </div>
 
