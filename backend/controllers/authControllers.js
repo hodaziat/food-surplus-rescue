@@ -5,8 +5,6 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        console.log('Login attempt for:', email);
-
         const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
         if (userResult.rows.length === 0) {
@@ -20,8 +18,8 @@ const loginUser = async (req, res) => {
             return res.status(400).json({ message: 'E-Mail oder Passwort falsch.' });
         }
 
-        res.json({
-            message: 'Login successful',
+        res.status(200).json({
+            message: 'Login erfolgreich',
             token: 'jwt_token_example',
             user: { 
                 id: userData.id, 
@@ -33,7 +31,7 @@ const loginUser = async (req, res) => {
 
     } catch (err) {
         console.error('Login Error:', err.message);
-        res.status(500).json({ error: 'Server error during login' });
+        res.status(500).json({ message: 'Serverfehler beim Login' });
     }
 };
 
@@ -42,15 +40,13 @@ const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     try {
-        console.log('Register attempt for:', email);
-
         // التحقق من وجود الإيميل
         const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (userCheck.rows.length > 0) {
             return res.status(400).json({ message: 'E-Mail bereits registriert.' });
         }
 
-        // إدراج الحساب الجديد في PostgreSQL
+        // إدراج الحساب الجديد في قاعدة البيانات
         const newUser = await pool.query(
             `INSERT INTO users (name, email, password, role) 
              VALUES ($1, $2, $3, $4) 
@@ -72,12 +68,12 @@ const registerUser = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Register Error Details:', err.message);
-        res.status(400).json({ message: err.message || 'Registrierung fehlgeschlagen.' });
+        console.error('Register Error:', err.message);
+        res.status(500).json({ message: err.message || 'Registrierung fehlgeschlagen.' });
     }
 };
 
-// 3. تحديث البريد الإلكتروني والاسم للمستخدم
+// 3. تحديث البيانات الشخصية
 const updateProfile = async (req, res) => {
     const { id } = req.params;
     const { name, email } = req.body;
@@ -89,16 +85,16 @@ const updateProfile = async (req, res) => {
         );
 
         if (updatedUser.rows.length === 0) {
-            return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+            return res.status(404).json({ message: 'Benutzer nicht gefunden' });
         }
 
-        res.json({
+        res.status(200).json({
             message: 'Profil erfolgreich aktualisiert',
             user: updatedUser.rows[0]
         });
     } catch (err) {
         console.error('Update Profile Error:', err.message);
-        res.status(500).json({ error: 'Serverfehler beim Aktualisieren des Profils' });
+        res.status(500).json({ message: 'Serverfehler beim Aktualisieren des Profils' });
     }
 };
 
@@ -111,21 +107,21 @@ const changePassword = async (req, res) => {
         const userResult = await pool.query('SELECT password FROM users WHERE id = $1', [id]);
 
         if (userResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+            return res.status(404).json({ message: 'Benutzer nicht gefunden' });
         }
 
         const storedPassword = userResult.rows[0].password;
 
         if (storedPassword !== currentPassword) {
-            return res.status(400).json({ error: 'Das aktuelle Passwort ist falsch.' });
+            return res.status(400).json({ message: 'Das aktuelle Passwort ist falsch.' });
         }
 
         await pool.query('UPDATE users SET password = $1 WHERE id = $2', [newPassword, id]);
 
-        res.json({ message: 'Passwort erfolgreich geändert' });
+        res.status(200).json({ message: 'Passwort erfolgreich geändert' });
     } catch (err) {
         console.error('Change Password Error:', err.message);
-        res.status(500).json({ error: 'Serverfehler beim Ändern des Passworts' });
+        res.status(500).json({ message: 'Serverfehler beim Ändern des Passworts' });
     }
 };
 

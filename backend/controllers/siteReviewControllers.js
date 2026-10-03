@@ -5,7 +5,7 @@ const addSiteReview = async (req, res) => {
     const { user_id, rating, comment } = req.body;
 
     if (!user_id || !rating) {
-        return res.status(400).json({ error: 'User ID und Bewertung (Sterne) sind erforderlich.' });
+        return res.status(400).json({ message: 'User ID und Bewertung (Sterne) sind erforderlich.' });
     }
 
     try {
@@ -40,7 +40,7 @@ const addSiteReview = async (req, res) => {
         });
     } catch (err) {
         console.error('Add Site Review Error:', err.message);
-        res.status(500).json({ error: 'Serverfehler beim Speichern der Bewertung.' });
+        res.status(500).json({ message: 'Serverfehler beim Speichern der Bewertung.' });
     }
 };
 
@@ -64,14 +64,14 @@ const getSiteReviews = async (req, res) => {
             `SELECT ROUND(AVG(rating), 1) AS average_rating, COUNT(*) AS total_reviews FROM site_reviews`
         );
 
-        res.json({
+        res.status(200).json({
             reviews: reviews.rows,
             average_rating: avgResult.rows[0].average_rating || 0,
             total_reviews: avgResult.rows[0].total_reviews || 0
         });
     } catch (err) {
         console.error('Get Site Reviews Error:', err.message);
-        res.status(500).json({ error: 'Serverfehler beim Laden der Bewertungen.' });
+        res.status(500).json({ message: 'Serverfehler beim Laden der Bewertungen.' });
     }
 };
 
@@ -81,10 +81,10 @@ const deleteSiteReview = async (req, res) => {
 
     try {
         await pool.query('DELETE FROM site_reviews WHERE id = $1', [id]);
-        res.json({ message: 'Bewertung erfolgreich gelöscht!' });
+        res.status(200).json({ message: 'Bewertung erfolgreich gelöscht!' });
     } catch (err) {
         console.error('Delete Site Review Error:', err.message);
-        res.status(500).json({ error: 'Serverfehler beim Löschen der Bewertung.' });
+        res.status(500).json({ message: 'Serverfehler beim Löschen der Bewertung.' });
     }
 };
 

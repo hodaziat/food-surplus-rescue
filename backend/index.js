@@ -10,7 +10,7 @@ const donorReviewRoutes = require('./routes/donorReviewRoutes');
 
 // استدعاء المسارات الرئيسية
 const authRoutes = require('./routes/auth');
-const foodRoutes = require('./routes/food'); // تأكدي أن اسم الملف في مجلد routes هو food.js أو عدليها لـ foodRoutes
+const foodRoutes = require('./routes/food');
 const reservationRoutes = require('./routes/reservation');
 
 const app = express();
@@ -36,34 +36,26 @@ app.post('/api/contact', async (req, res) => {
   console.log('📩 Neue Kontaktanfrage erhalten:', { name, email, subject, message });
 
   try {
-    // يمكنك حفظها في قاعدة البيانات إذا كان لديك جدول للرسائل
-    /*
-    await db.query(
-      'INSERT INTO contact_messages (name, email, subject, message) VALUES ($1, $2, $3, $4)',
-      [name, email, subject, message]
-    );
-    */
-    
-    res.status(200).json({ success: true, message: 'Nachricht erfolgreich gesendet!' });
+    res.status(200).json({ message: 'Nachricht erfolgreich gesendet!' });
   } catch (err) {
     console.error('Contact Error:', err);
-    res.status(500).json({ error: 'Serverfehler beim Senden der Nachricht.' });
+    res.status(500).json({ message: 'Serverfehler beim Senden der Nachricht.' });
   }
 });
 
 // الفحص
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Food Surplus Rescue Server is running!' });
+  res.status(200).json({ status: 'ok', message: 'Food Surplus Rescue Server is running!' });
 });
 
 // اختبار قاعدة البيانات
 app.get('/api/test-db', async (req, res) => {
   try {
     const result = await db.query('SELECT NOW()');
-    res.json({ message: 'DB connection successful', time: result.rows[0].now });
+    res.status(200).json({ message: 'DB connection successful', time: result.rows[0].now });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Database connection failed' });
+    res.status(500).json({ message: 'Database connection failed' });
   }
 });
 

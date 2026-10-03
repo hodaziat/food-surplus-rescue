@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+// المكونات الأساسية (Components)
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+
+// الصفحات (Pages)
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AddFood from './pages/AddFood';
-import Footer from './components/Footer';
 import About from './pages/About';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
@@ -17,7 +21,7 @@ import FoodDetails from './pages/FoodDetails';
 import SpecialRequest from './pages/SpecialRequest';
 import EditFood from './pages/EditFood';
 
-// مكون حماية المسارات (ProtectedRoute)
+// مكون حماية المسارات (ProtectedRoute) بأسلوب بسيط
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -29,13 +33,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   const [user, setUser] = useState(null);
 
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('user');
-    setUser(null);
-  }, []);
-
+  // جلب اسم المستخدم عند التحميل
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
     if (storedUser) {
@@ -43,39 +41,15 @@ function App() {
     }
   }, []);
 
-  // --- ميزة تسجيل الخروج التلقائي بعد ساعة عند عدم النشاط (Auto Logout) ---
-  useEffect(() => {
-    if (!user) return; // تشغيل المراقبة فقط إذا كان المستخدم مسجلاً دخوله
+  // دالة تسجيل الخروج العادية المباشرة
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user');
+    setUser(null);
+  };
 
-    // تحديد مدة عدم النشاط: 60 دقيقة = 3,600,000 مللي ثانية
-    const INACTIVITY_LIMIT = 60 * 60 * 1000;
-    let timer;
-
-    const resetTimer = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        alert('Sie wurden aufgrund von Inaktivität automatisch abgemeldet. (تم تسجيل خروجك بسبب عدم النشاط)');
-        handleLogout();
-        window.location.href = '/login';
-      }, INACTIVITY_LIMIT);
-    };
-
-    // الأحداث التي تعبر عن نشاط المستخدم
-    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
-
-    // إضافة مستمعات الأحداث
-    events.forEach((event) => window.addEventListener(event, resetTimer));
-
-    // تشغيل المؤقت أول مرة
-    resetTimer();
-
-    // التنظيف عند إغلاق أو إعادة تحميل المكون
-    return () => {
-      if (timer) clearTimeout(timer);
-      events.forEach((event) => window.removeEventListener(event, resetTimer));
-    };
-  }, [user, handleLogout]);
-
+  // دالة تسجيل الدخول
   const handleLogin = (username) => {
     setUser(username);
   };
@@ -84,6 +58,7 @@ function App() {
     <Router>
       <div className="d-flex flex-column min-vh-100">
         <Navbar user={user} onLogout={handleLogout} />
+        
         <div className="flex-grow-1">
           <Routes>
             {/* المسارات العامة */}
@@ -98,7 +73,7 @@ function App() {
             <Route path="/special-request" element={<SpecialRequest />} />
             <Route path="/edit-food/:id" element={<EditFood />} />
 
-            {/* المسارات المحمية مع دعم اسمي المسار للإضافة */}
+            {/* المسارات المحمية */}
             <Route 
               path="/add-food" 
               element={
@@ -141,6 +116,7 @@ function App() {
             />
           </Routes>
         </div>
+
         <Footer />
       </div>
     </Router>

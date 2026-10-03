@@ -33,7 +33,7 @@ const createFoodListing = async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ error: 'Server error while adding food listing' });
+        res.status(500).json({ message: 'Server error while adding food listing' });
     }
 };
 
@@ -49,10 +49,10 @@ const getAllFoodListings = async (req, res) => {
              ORDER BY created_at DESC`
         );
 
-        res.json(listings.rows);
+        res.status(200).json(listings.rows);
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ error: 'Server error while fetching food listings' });
+        res.status(500).json({ message: 'Server error while fetching food listings' });
     }
 };
 
@@ -66,7 +66,7 @@ const updateFoodListing = async (req, res) => {
         const currentFood = await pool.query('SELECT image_url FROM food_listings WHERE id = $1', [id]);
 
         if (currentFood.rows.length === 0) {
-            return res.status(404).json({ error: 'Food listing not found' });
+            return res.status(404).json({ message: 'Food listing not found' });
         }
 
         let imageUrl = currentFood.rows[0].image_url;
@@ -102,13 +102,13 @@ const updateFoodListing = async (req, res) => {
             ]
         );
 
-        res.json({
+        res.status(200).json({
             message: 'Food listing updated successfully',
             listing: updatedListing.rows[0]
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ error: 'Server error while updating food listing' });
+        res.status(500).json({ message: 'Server error while updating food listing' });
     }
 };
 
@@ -139,13 +139,13 @@ const deleteFoodListing = async (req, res) => {
         );
 
         if (deleteListing.rows.length === 0) {
-            return res.status(404).json({ error: 'Food listing not found' });
+            return res.status(404).json({ message: 'Food listing not found' });
         }
 
-        res.json({ message: 'Food listing deleted successfully' });
+        res.status(200).json({ message: 'Food listing deleted successfully' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ error: 'Server error while deleting food listing' });
+        res.status(500).json({ message: 'Server error while deleting food listing' });
     }
 };
 

@@ -5,26 +5,26 @@ const createReservation = async (req, res) => {
     const { food_id, receiver_id, requested_quantity = 1 } = req.body;
 
     if (!food_id || !receiver_id) {
-        return res.status(400).json({ error: 'Food ID and Receiver ID are required' });
+        return res.status(400).json({ message: 'Food ID und Receiver ID sind erforderlich' });
     }
 
     try {
         const foodCheck = await pool.query('SELECT * FROM food_listings WHERE id = $1', [food_id]);
 
         if (foodCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Food item not found' });
+            return res.status(404).json({ message: 'Food item not found' });
         }
 
         const foodItem = foodCheck.rows[0];
 
         if (foodItem.user_id == receiver_id || foodItem.donor_id == receiver_id) {
-            return res.status(400).json({ error: 'Sie können Ihr eigenes Angebot nicht reservieren.' });
+            return res.status(400).json({ message: 'Sie können Ihr eigenes Angebot nicht reservieren.' });
         }
 
         const currentQuantity = parseInt(foodItem.quantity) || 1;
 
         if (currentQuantity < requested_quantity) {
-            return res.status(400).json({ error: 'Nicht genügend Menge verfügbar.' });
+            return res.status(400).json({ message: 'Nicht genügend Menge verfügbar.' });
         }
 
         const newReservation = await pool.query(
@@ -46,7 +46,7 @@ const createReservation = async (req, res) => {
         });
     } catch (err) {
         console.error('Reservation Error:', err.message);
-        res.status(500).json({ error: 'Server error while creating reservation: ' + err.message });
+        res.status(500).json({ message: 'Serverfehler bei der Reservierung' });
     }
 };
 
@@ -77,10 +77,10 @@ const getUserReservations = async (req, res) => {
             [userId]
         );
 
-        res.json(reservations.rows);
+        res.status(200).json(reservations.rows);
     } catch (err) {
         console.error('Fetch Reservations Error:', err.message);
-        res.status(500).json({ error: 'Server error while fetching reservations' });
+        res.status(500).json({ message: 'Serverfehler beim Laden der Reservierungen' });
     }
 };
 
@@ -95,7 +95,7 @@ const deleteReservation = async (req, res) => {
         if (reservationCheck.rows.length === 0) {
             const foodCheck = await pool.query('SELECT * FROM reservations WHERE food_id = $1 LIMIT 1', [id]);
             if (foodCheck.rows.length === 0) {
-                return res.status(404).json({ error: 'Reservierung nicht gefunden' });
+                return res.status(404).json({ message: 'Reservierung nicht gefunden' });
             }
             reservation = foodCheck.rows[0];
         } else {
@@ -123,10 +123,10 @@ const deleteReservation = async (req, res) => {
             [updatedQty.toString(), 'available', food_id]
         );
 
-        res.json({ message: 'Reservierung erfolgreich storniert.' });
+        res.status(200).json({ message: 'Reservierung erfolgreich storniert.' });
     } catch (err) {
         console.error('Delete Reservation Error:', err.message);
-        res.status(500).json({ error: 'Server error while deleting reservation: ' + err.message });
+        res.status(500).json({ message: 'Serverfehler beim Stornieren der Reservierung' });
     }
 };
 

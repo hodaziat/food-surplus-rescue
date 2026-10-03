@@ -5,11 +5,11 @@ const addDonorReview = async (req, res) => {
     const { donor_id, reviewer_id, rating, comment } = req.body;
 
     if (!donor_id || !reviewer_id || !rating) {
-        return res.status(400).json({ error: 'Donor ID, Reviewer ID und Rating sind erforderlich.' });
+        return res.status(400).json({ message: 'Donor ID, Reviewer ID und Rating sind erforderlich.' });
     }
 
     if (parseInt(donor_id) === parseInt(reviewer_id)) {
-        return res.status(400).json({ error: 'Sie können sich nicht selbst bewerten.' });
+        return res.status(400).json({ message: 'Sie können sich nicht selbst bewerten.' });
     }
 
     try {
@@ -37,7 +37,7 @@ const addDonorReview = async (req, res) => {
         res.status(201).json({ message: 'Bewertung erfolgreich gespeichert!', review: newReview.rows[0] });
     } catch (err) {
         console.error('Donor Review Error:', err.message);
-        res.status(500).json({ error: 'Serverfehler beim Speichern der Bewertung.' });
+        res.status(500).json({ message: 'Serverfehler beim Speichern der Bewertung.' });
     }
 };
 
@@ -68,14 +68,14 @@ const getDonorReviews = async (req, res) => {
             [donorId]
         );
 
-        res.json({
+        res.status(200).json({
             reviews: reviews.rows,
             average_rating: avgResult.rows[0].average_rating || 0,
             total_reviews: avgResult.rows[0].total_reviews || 0
         });
     } catch (err) {
         console.error('Get Donor Reviews Error:', err.message);
-        res.status(500).json({ error: 'Serverfehler beim Laden der Bewertungen.' });
+        res.status(500).json({ message: 'Serverfehler beim Laden der Bewertungen.' });
     }
 };
 
@@ -85,10 +85,10 @@ const deleteDonorReview = async (req, res) => {
 
     try {
         await pool.query('DELETE FROM donor_reviews WHERE id = $1', [id]);
-        res.json({ message: 'Bewertung erfolgreich gelöscht!' });
+        res.status(200).json({ message: 'Bewertung erfolgreich gelöscht!' });
     } catch (err) {
         console.error('Delete Donor Review Error:', err.message);
-        res.status(500).json({ error: 'Serverfehler beim Löschen der Bewertung.' });
+        res.status(500).json({ message: 'Serverfehler beim Löschen der Bewertung.' });
     }
 };
 
