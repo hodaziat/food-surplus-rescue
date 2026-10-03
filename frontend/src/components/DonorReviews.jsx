@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Form, Spinner } from 'react-bootstrap';
 import API from '../services/api';
 
 const DonorReviews = ({ donorId, donorName }) => {
@@ -58,7 +57,7 @@ const DonorReviews = ({ donorId, donorName }) => {
       fetchReviews();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || 'Fehler beim Senden der Bewertung.');
+      alert(err.response?.data?.message || 'Fehler beim Senden der Bewertung.');
     } finally {
       setSubmitting(false);
     }
@@ -78,8 +77,8 @@ const DonorReviews = ({ donorId, donorName }) => {
   };
 
   return (
-    <Card className="border-0 shadow-sm rounded-4 p-4 mt-4 bg-white">
-      <Card.Body>
+    <div className="card border-0 shadow-sm rounded-4 p-4 mt-4 bg-white">
+      <div className="card-body">
         <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
           <div>
             <h5 className="fw-bold text-dark m-0">⭐ Bewertungen für {donorName || 'diesen Partner'}</h5>
@@ -96,11 +95,11 @@ const DonorReviews = ({ donorId, donorName }) => {
 
         {/* نموذج كتابة التقييم */}
         {user && Number(user.id) !== Number(donorId) && (
-          <Form onSubmit={handleSubmit} className="mb-4 bg-light p-3 rounded-3">
+          <form onSubmit={handleSubmit} className="mb-4 bg-light p-3 rounded-3">
             <h6 className="fw-bold text-dark mb-2">✍️ Partner bewerten</h6>
             
             <div className="mb-2">
-              <span className="fs-4 text-warning cursor-pointer">
+              <span className="fs-4 text-warning">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span 
                     key={star} 
@@ -113,27 +112,32 @@ const DonorReviews = ({ donorId, donorName }) => {
               </span>
             </div>
 
-            <Form.Group className="mb-3">
-              <Form.Control
-                as="textarea"
+            <div className="mb-3">
+              <textarea
                 rows={2}
                 placeholder="Wie war die Abholung / Qualität der Speisen?"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="rounded-3"
+                className="form-control rounded-3"
                 required
               />
-            </Form.Group>
+            </div>
 
-            <Button variant="success" size="sm" type="submit" className="fw-bold rounded-3 px-3" disabled={submitting}>
+            <button 
+              type="submit" 
+              className="btn btn-success btn-sm fw-bold rounded-3 px-3" 
+              disabled={submitting}
+            >
               {submitting ? 'Senden...' : 'Bewertung absenden'}
-            </Button>
-          </Form>
+            </button>
+          </form>
         )}
 
         {/* قائمة التقييمات */}
         {loading ? (
-          <div className="text-center py-3"><Spinner animation="border" size="sm" variant="success" /></div>
+          <div className="text-center py-3">
+            <div className="spinner-border spinner-border-sm text-success" role="status"></div>
+          </div>
         ) : reviews.length === 0 ? (
           <p className="text-muted text-center my-3 small">Noch keine Bewertungen für diesen Partner vorhanden.</p>
         ) : (
@@ -147,15 +151,15 @@ const DonorReviews = ({ donorId, donorName }) => {
                       {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
                     </span>
                     {user && Number(rev.reviewer_id) === Number(user.id) && (
-                      <Button 
-                        variant="link" 
-                        className="text-danger p-0 border-0" 
+                      <button 
+                        type="button"
+                        className="btn btn-link text-danger p-0 border-0 text-decoration-none" 
                         style={{ fontSize: '0.8rem' }}
                         onClick={() => handleDelete(rev.id)}
                         title="Löschen"
                       >
                         🗑️
-                      </Button>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -167,8 +171,8 @@ const DonorReviews = ({ donorId, donorName }) => {
             ))}
           </div>
         )}
-      </Card.Body>
-    </Card>
+      </div>
+    </div>
   );
 };
 

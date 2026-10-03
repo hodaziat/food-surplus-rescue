@@ -57,7 +57,7 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
       }
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || 'Fehler bei der Reservierung.');
+      alert(err.response?.data?.message || 'Fehler bei der Reservierung.');
     }
   };
 

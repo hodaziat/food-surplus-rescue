@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Form, Spinner } from 'react-bootstrap';
 import API from '../services/api';
 
 const SiteReviews = () => {
@@ -51,7 +50,7 @@ const SiteReviews = () => {
       fetchReviews();
     } catch (err) {
       console.error(err);
-      alert('Fehler beim Senden der Bewertung.');
+      alert(err.response?.data?.message || 'Fehler beim Senden der Bewertung.');
     } finally {
       setSubmitting(false);
     }
@@ -91,14 +90,14 @@ const SiteReviews = () => {
 
         {/* نموذج إضافة تقييم جديد للموقع */}
         {user ? (
-          <Card className="border-0 shadow-sm rounded-4 p-4 mb-5 max-w-600 mx-auto">
+          <div className="card border-0 shadow-sm rounded-4 p-4 mb-5 mx-auto" style={{ maxWidth: '600px' }}>
             <h5 className="fw-bold text-dark mb-3">✍️ Schreiben Sie eine Bewertung für die Plattform</h5>
-            <Form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit}>
               
               {/* اختيار النجوم */}
               <div className="mb-3">
-                <Form.Label className="fw-semibold">Ihre Bewertung:</Form.Label>
-                <div className="fs-3 text-warning cursor-pointer">
+                <label className="form-label fw-semibold">Ihre Bewertung:</label>
+                <div className="fs-3 text-warning">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <span 
                       key={star} 
@@ -111,23 +110,26 @@ const SiteReviews = () => {
                 </div>
               </div>
 
-              <Form.Group className="mb-3">
-                <Form.Control
-                  as="textarea"
+              <div className="mb-3">
+                <textarea
                   rows={3}
                   placeholder="Wie gefällt Ihnen Food Surplus Rescue Erlangen? Hinterlassen Sie ein Feedback..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="rounded-3"
+                  className="form-control rounded-3"
                   required
                 />
-              </Form.Group>
+              </div>
 
-              <Button variant="success" type="submit" className="fw-bold rounded-3 px-4" disabled={submitting}>
+              <button 
+                type="submit" 
+                className="btn btn-success fw-bold rounded-3 px-4" 
+                disabled={submitting}
+              >
                 {submitting ? 'Wird gesendet...' : 'Bewertung absenden'}
-              </Button>
-            </Form>
-          </Card>
+              </button>
+            </form>
+          </div>
         ) : (
           <div className="alert alert-info text-center rounded-4 mb-5">
             Bitte <a href="/login" className="fw-bold">melden Sie sich an</a>, um eine Bewertung abzugeben.
@@ -136,13 +138,15 @@ const SiteReviews = () => {
 
         {/* عرض قائمة التقييمات المكتوبة */}
         {loading ? (
-          <div className="text-center"><Spinner animation="border" variant="success" /></div>
+          <div className="text-center py-3">
+            <div className="spinner-border text-success" role="status"></div>
+          </div>
         ) : (
           <div className="row g-4">
             {reviews.map((rev) => (
               <div key={rev.id} className="col-md-6 col-lg-4">
-                <Card className="border-0 shadow-sm rounded-4 h-100 p-3">
-                  <Card.Body className="d-flex flex-column justify-content-between">
+                <div className="card border-0 shadow-sm rounded-4 h-100 p-3">
+                  <div className="card-body d-flex flex-column justify-content-between">
                     <div>
                       <div className="d-flex justify-content-between align-items-center mb-2">
                         <strong className="text-dark">👤 {rev.user_name}</strong>
@@ -153,14 +157,14 @@ const SiteReviews = () => {
 
                           {/* زر الحذف يظهر فقط لصاحب التقييم */}
                           {user && Number(rev.user_id) === Number(user.id) && (
-                            <Button 
-                              variant="link" 
-                              className="text-danger p-0 ms-1 text-decoration-none" 
+                            <button 
+                              type="button"
+                              className="btn btn-link text-danger p-0 ms-1 text-decoration-none border-0" 
                               onClick={() => handleDelete(rev.id)}
                               title="Bewertung löschen"
                             >
                               🗑️
-                            </Button>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -170,8 +174,8 @@ const SiteReviews = () => {
                     <small className="text-secondary opacity-75 d-block text-end mt-2" style={{ fontSize: '0.75rem' }}>
                       📅 {new Date(rev.created_at).toLocaleDateString('de-DE')}
                     </small>
-                  </Card.Body>
-                </Card>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
