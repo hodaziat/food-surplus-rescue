@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -29,6 +29,13 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   const [user, setUser] = useState(null);
 
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user');
+    setUser(null);
+  }, []);
+
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
     if (storedUser) {
@@ -36,15 +43,41 @@ function App() {
     }
   }, []);
 
+  // --- ميزة تسجيل الخروج التلقائي بعد ساعة عند عدم النشاط (Auto Logout) ---
+  useEffect(() => {
+    if (!user) return; // تشغيل المراقبة فقط إذا كان المستخدم مسجلاً دخوله
+
+    // تحديد مدة عدم النشاط: 60 دقيقة = 3,600,000 مللي ثانية
+    const INACTIVITY_LIMIT = 60 * 60 * 1000;
+    let timer;
+
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        alert('Sie wurden aufgrund von Inaktivität automatisch abgemeldet. (تم تسجيل خروجك بسبب عدم النشاط)');
+        handleLogout();
+        window.location.href = '/login';
+      }, INACTIVITY_LIMIT);
+    };
+
+    // الأحداث التي تعبر عن نشاط المستخدم
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+
+    // إضافة مستمعات الأحداث
+    events.forEach((event) => window.addEventListener(event, resetTimer));
+
+    // تشغيل المؤقت أول مرة
+    resetTimer();
+
+    // التنظيف عند إغلاق أو إعادة تحميل المكون
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }, [user, handleLogout]);
+
   const handleLogin = (username) => {
     setUser(username);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('user');
-    setUser(null);
   };
 
   return (
