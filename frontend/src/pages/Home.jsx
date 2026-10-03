@@ -43,10 +43,23 @@ const Home = () => {
     }
   };
 
+  // تصفية العروض بناءً على البحث والفئة
   const filteredListings = listings.filter((item) => {
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === 'Alle' || item.category === selectedCategory;
+
+    // جعل مطابقة الفئة مرنة جداً لمنع أي اختلاف في كتابة النص
+    const isAllCategories = selectedCategory === 'Alle' || 
+                            selectedCategory === 'Alle Kategorien' || 
+                            selectedCategory.includes('جميع الفئات');
+
+    const matchesCategory = isAllCategories || 
+      (item.category && (
+        item.category.trim().toLowerCase() === selectedCategory.trim().toLowerCase() ||
+        selectedCategory.toLowerCase().includes(item.category.trim().toLowerCase()) ||
+        item.category.toLowerCase().includes(selectedCategory.trim().toLowerCase())
+      ));
+
     return matchesSearch && matchesCategory;
   });
 
@@ -144,7 +157,7 @@ const Home = () => {
           <div className="card border-0 shadow-sm text-center p-5 rounded-4">
             <div className="fs-1 mb-3">🔍</div>
             <h5 className="fw-bold text-secondary">Keine passenden Angebote gefunden.</h5>
-            <p className="text-muted">Versuchen Sie einen anderen Suchbegriff.</p>
+            <p className="text-muted">Versuchen Sie einen anderen Suchbegriff oder eine andere Kategorie.</p>
             {currentUser && currentUser.role === 'donor' && (
               <div>
                 <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
@@ -167,7 +180,7 @@ const Home = () => {
           </div>
         )}
 
-        {/* الصف الرابع: قسم تقييمات الموقع ككل (تم إضافته هنا) */}
+        {/* الصف الرابع: تقييمات الموقع */}
         <div className="mt-5">
           <SiteReviews />
         </div>

@@ -149,17 +149,21 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
               </div>
             </div>
 
-            {/* الأزرار */}
+            {/* الأزرار بعد ضبط صلاحيات الأدمن والصاحب */}
             <div className="d-flex gap-2">
               {isOwner || isAdmin ? (
                 <>
-                  <button 
-                    onClick={() => navigate(`/edit-food/${item.id}`)}
-                    className="btn btn-outline-warning text-dark fw-bold py-2 rounded-3 flex-fill"
-                  >
-                    ✏️ Bearbeiten
-                  </button>
+                  {/* زر التعديل يظهر فقط لصاحب العرض الأصلي */}
+                  {isOwner && (
+                    <button 
+                      onClick={() => navigate(`/edit-food/${item.id}`)}
+                      className="btn btn-outline-warning text-dark fw-bold py-2 rounded-3 flex-fill"
+                    >
+                      ✏️ Bearbeiten
+                    </button>
+                  )}
 
+                  {/* زر الحذف يظهر لصاحب العرض وللأدمن أيضاً */}
                   <button 
                     onClick={() => handleDelete(item.id)}
                     className="btn btn-outline-danger fw-bold py-2 rounded-3 flex-fill"

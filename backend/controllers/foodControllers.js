@@ -2,9 +2,9 @@ const pool = require('../config/db');
 const path = require('path');
 const fs = require('fs');
 
-// 1. إضافة إعلان طعام جديد مع حفظ مسار الصورة والأسعار
+// 1. إضافة إعلان طعام جديد مع حفظ الفئة ومسار الصورة والأسعار
 const createFoodListing = async (req, res) => {
-    const { donor_id, title, description, quantity, expiration_date, price, original_price } = req.body;
+    const { donor_id, title, category, description, quantity, expiration_date, price, original_price } = req.body;
 
     // أخذ مسار الصورة المرفوعة في حال وجودها
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
@@ -12,11 +12,12 @@ const createFoodListing = async (req, res) => {
     try {
         const newListing = await pool.query(
             `INSERT INTO food_listings 
-             (donor_id, title, description, quantity, expiration_date, image_url, price, original_price) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+             (donor_id, title, category, description, quantity, expiration_date, image_url, price, original_price) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
             [
                 donor_id, 
                 title, 
+                category || 'Sonstiges', // تعيين قيمة افتراضية في حال عدم التحديد
                 description, 
                 quantity, 
                 expiration_date, 
@@ -55,10 +56,10 @@ const getAllFoodListings = async (req, res) => {
     }
 };
 
-// 3. تحديث إعلان طعام موجود مع تحديث الأسعار
+// 3. تحديث إعلان طعام موجود مع تحديث الفئة والأسعار
 const updateFoodListing = async (req, res) => {
     const { id } = req.params;
-    const { title, description, quantity, expiration_date, price, original_price } = req.body;
+    const { title, category, description, quantity, expiration_date, price, original_price } = req.body;
 
     try {
         // جلب الوجبة الحالية للتأكد من وجودها ولمعرفة مسار الصورة القديمة
@@ -83,13 +84,14 @@ const updateFoodListing = async (req, res) => {
             imageUrl = `/uploads/${req.file.filename}`;
         }
 
-        // تحديث البيانات والأسعار في قاعدة البيانات
+        // تحديث البيانات والأسعار والفئة في قاعدة البيانات
         const updatedListing = await pool.query(
             `UPDATE food_listings 
-             SET title = $1, description = $2, quantity = $3, expiration_date = $4, image_url = $5, price = $6, original_price = $7 
-             WHERE id = $8 RETURNING *`,
+             SET title = $1, category = $2, description = $3, quantity = $4, expiration_date = $5, image_url = $6, price = $7, original_price = $8 
+             WHERE id = $9 RETURNING *`,
             [
                 title, 
+                category || 'Sonstiges',
                 description, 
                 quantity, 
                 expiration_date, 

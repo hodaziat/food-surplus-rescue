@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const AddFood = () => {
   const [formData, setFormData] = useState({
     title: '',
+    category: 'Backwaren', // الفئة الافتراضية
     description: '',
     quantity: '',
     expiration_date: '',
@@ -44,6 +45,7 @@ const AddFood = () => {
     const data = new FormData();
     data.append('donor_id', user.id);
     data.append('title', formData.title);
+    data.append('category', formData.category); // إرسال الفئة المخزنة
     data.append('quantity', formData.quantity);
     data.append('expiration_date', formData.expiration_date);
     data.append('description', formData.description);
@@ -78,6 +80,7 @@ const AddFood = () => {
               {error && <div className="alert alert-danger rounded-3">{error}</div>}
 
               <form onSubmit={handleSubmit}>
+                {/* اسم الوجبة */}
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Titel / Name des Lebensmittels</label>
                   <input
@@ -85,8 +88,25 @@ const AddFood = () => {
                     className="form-control py-2 rounded-3"
                     placeholder="z.B. Überraschungstüte Backwaren"
                     required
+                    value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   />
+                </div>
+
+                {/* قائمة اختيار الفئة (Kategorie) */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Kategorie (الفئة)</label>
+                  <select 
+                    className="form-select py-2 rounded-3"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    required
+                  >
+                    <option value="Backwaren">🥖 Backwaren (مخبوزات)</option>
+                    <option value="Obst & Gemüse">🍎 Obst & Gemüse (فواكه وخضار)</option>
+                    <option value="Gekochte Speisen">🍲 Gekochte Speisen (وجبات مطبوخة)</option>
+                    <option value="Sonstiges">📦 Sonstiges (أخرى)</option>
+                  </select>
                 </div>
 
                 {/* خيار تحديد نوع العرض: مجاني أم بمبلغ */}
@@ -188,6 +208,7 @@ const AddFood = () => {
                     className="form-control py-2 rounded-3"
                     placeholder="z.B. 3 Portionen, 2 kg"
                     required
+                    value={formData.quantity}
                     onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                   />
                 </div>
@@ -198,6 +219,7 @@ const AddFood = () => {
                     type="datetime-local"
                     className="form-control py-2 rounded-3"
                     required
+                    value={formData.expiration_date}
                     onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
                   />
                 </div>
@@ -208,6 +230,7 @@ const AddFood = () => {
                     className="form-control rounded-3"
                     rows="3"
                     placeholder="Zusätzliche Infos wie Abholort oder Allergene..."
+                    value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   />
                 </div>
