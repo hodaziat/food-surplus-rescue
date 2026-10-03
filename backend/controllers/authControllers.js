@@ -27,7 +27,7 @@ const loginUser = async (req, res) => {
                 id: userData.id, 
                 name: userData.name || userData.username || 'User', 
                 email: userData.email,
-                role: userData.role || userData.user_role || 'user' // توحيد القيمة الافتراضية كـ user
+                role: userData.role || userData.user_role || 'user'
             }
         });
 
@@ -77,7 +77,61 @@ const registerUser = async (req, res) => {
     }
 };
 
+// 3. تحديث البريد الإلكتروني والاسم للمستخدم
+const updateProfile = async (req, res) => {
+    const { id } = req.params;
+    const { name, email } = req.body;
+
+    try {
+        const updatedUser = await pool.query(
+            'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, role',
+            [name, email, id]
+        );
+
+        if (updatedUser.rows.length === 0) {
+            return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+        }
+
+        res.json({
+            message: 'Profil erfolgreich aktualisiert',
+            user: updatedUser.rows[0]
+        });
+    } catch (err) {
+        console.error('Update Profile Error:', err.message);
+        res.status(500).json({ error: 'Serverfehler beim Aktualisieren des Profils' });
+    }
+};
+
+// 4. تغيير كلمة المرور للمستخدم
+const changePassword = async (req, res) => {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    try {
+        const userResult = await pool.query('SELECT password FROM users WHERE id = $1', [id]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+        }
+
+        const storedPassword = userResult.rows[0].password;
+
+        if (storedPassword !== currentPassword) {
+            return res.status(400).json({ error: 'Das aktuelle Passwort ist falsch.' });
+        }
+
+        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [newPassword, id]);
+
+        res.json({ message: 'Passwort erfolgreich geändert' });
+    } catch (err) {
+        console.error('Change Password Error:', err.message);
+        res.status(500).json({ error: 'Serverfehler beim Ändern des Passworts' });
+    }
+};
+
 module.exports = {
     loginUser,
-    registerUser
+    registerUser,
+    updateProfile,
+    changePassword
 };
