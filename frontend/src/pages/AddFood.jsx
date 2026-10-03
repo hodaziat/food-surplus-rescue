@@ -5,14 +5,14 @@ import { useNavigate } from 'react-router-dom';
 const AddFood = () => {
   const [formData, setFormData] = useState({
     title: '',
-    category: 'Backwaren', // الفئة الافتراضية
+    category: 'Backwaren',
     description: '',
     quantity: '',
     expiration_date: '',
     price: '0',
     original_price: '0'
   });
-  const [isPaid, setIsPaid] = useState(false); // التحكم في نوع العرض (مجاني أو بمبلغ)
+  const [isPaid, setIsPaid] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -45,7 +45,7 @@ const AddFood = () => {
     const data = new FormData();
     data.append('donor_id', user.id);
     data.append('title', formData.title);
-    data.append('category', formData.category); // إرسال الفئة المخزنة
+    data.append('category', formData.category);
     data.append('quantity', formData.quantity);
     data.append('expiration_date', formData.expiration_date);
     data.append('description', formData.description);
@@ -64,7 +64,7 @@ const AddFood = () => {
       });
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Lebensmittels.');
+      setError(err.response?.data?.message || 'Fehler beim Hinzufügen des Lebensmittels.');
     }
   };
 
@@ -93,23 +93,23 @@ const AddFood = () => {
                   />
                 </div>
 
-                {/* قائمة اختيار الفئة (Kategorie) */}
+                {/* قائمة اختيار الفئة */}
                 <div className="mb-3">
-                  <label className="form-label fw-semibold">Kategorie (الفئة)</label>
+                  <label className="form-label fw-semibold">Kategorie</label>
                   <select 
                     className="form-select py-2 rounded-3"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     required
                   >
-                    <option value="Backwaren">🥖 Backwaren (مخبوزات)</option>
-                    <option value="Obst & Gemüse">🍎 Obst & Gemüse (فواكه وخضار)</option>
-                    <option value="Gekochte Speisen">🍲 Gekochte Speisen (وجبات مطبوخة)</option>
-                    <option value="Sonstiges">📦 Sonstiges (أخرى)</option>
+                    <option value="Backwaren">🥖 Backwaren</option>
+                    <option value="Obst & Gemüse">🍎 Obst & Gemüse</option>
+                    <option value="Gekochte Speisen">🍲 Gekochte Speisen</option>
+                    <option value="Sonstiges">📦 Sonstiges</option>
                   </select>
                 </div>
 
-                {/* خيار تحديد نوع العرض: مجاني أم بمبلغ */}
+                {/* خيار تحديد نوع العرض */}
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Angebotsart</label>
                   <div className="d-flex gap-3">
@@ -149,7 +149,7 @@ const AddFood = () => {
                   </div>
                 </div>
 
-                {/* حقول السعر والسعر الأصلي تظهر عند اختيار "Vergünstigter Preis" */}
+                {/* حقول السعر */}
                 {isPaid && (
                   <div className="row mb-3">
                     <div className="col-6">

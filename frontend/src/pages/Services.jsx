@@ -1,47 +1,51 @@
 import React from 'react';
-import { Container, Row, Col, Card } from 'react-bootstrap';
 
 const Dienstleistungen = () => {
-    return (
-        <Container className="py-5">
-            <h2 className="text-center mb-4">Unsere Dienstleistungen</h2>
-            <p className="text-center text-muted mb-5">
-                Wir verbinden Menschen, um Lebensmittelverschwendung zu reduzieren und Ressourcen sinnvoll zu nutzen.
-            </p>
-            <Row>
-                <Col md={4} className="mb-4">
-                    <Card className="h-4 shadow-sm p-3">
-                        <Card.Body>
-                            <Card.Title>1. Lebensmittel retten</Card.Title>
-                            <Card.Text>
-                                Lokale Geschäfte und Restaurants können ihr überschüssiges Essen einfach eintragen, anstatt es wegzuwerfen.
-                            </Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={4} className="mb-4">
-                    <Card className="h-4 shadow-sm p-3">
-                        <Card.Body>
-                            <Card.Title>2. Kostenlose Verteilung</Card.Title>
-                            <Card.Text>
-                                Bedürftige Personen und Nutzer können frische Lebensmittel in ihrer Nähe finden und sicher reservieren.
-                            </Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={4} className="mb-4">
-                    <Card className="h-4 shadow-sm p-3">
-                        <Card.Body>
-                            <Card.Title>3. Qualität & Sicherheit</Card.Title>
-                            <Card.Text>
-                                Unser Admin-System überwacht die Plattform, um sicherzustellen, dass alle Angebote seriös und sicher sind.
-                            </Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-        </Container>
-    );
+  return (
+    <div className="container py-5">
+      <div className="text-center mb-5">
+        <h2 className="fw-bold text-success">Unsere Dienstleistungen</h2>
+        <p className="text-muted">
+          Wir verbinden Menschen, um Lebensmittelverschwendung zu reduzieren und Ressourcen sinnvoll zu nutzen.
+        </p>
+      </div>
+
+      <div className="row g-4">
+        <div className="col-md-4">
+          <div className="card border-0 shadow-sm p-3 h-100 rounded-4">
+            <div className="card-body">
+              <h5 className="card-title fw-bold text-dark mb-3">1. Lebensmittel retten</h5>
+              <p className="card-text text-muted">
+                Lokale Geschäfte und Restaurants können ihr überschüssiges Essen einfach eintragen, anstatt es wegzuwerfen.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-4">
+          <div className="card border-0 shadow-sm p-3 h-100 rounded-4">
+            <div className="card-body">
+              <h5 className="card-title fw-bold text-dark mb-3">2. Kostenlose Verteilung</h5>
+              <p className="card-text text-muted">
+                Bedürftige Personen und Nutzer können frische Lebensmittel in ihrer Nähe finden und sicher reservieren.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-4">
+          <div className="card border-0 shadow-sm p-3 h-100 rounded-4">
+            <div className="card-body">
+              <h5 className="card-title fw-bold text-dark mb-3">3. Qualität & Sicherheit</h5>
+              <p className="card-text text-muted">
+                Unser Admin-System überwacht die Plattform, um sicherzustellen, dass alle Angebote seriös und sicher sind.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Dienstleistungen;

@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { Container, Card, Row, Col, Spinner, Badge, Button, Modal, Form } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 
 const Reservations = () => {
@@ -33,7 +32,7 @@ const Reservations = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // دمج الوجبات المتشابهة بناءً على food_id لحساب العد بالكامل
+  // دمج الوجبات المتشابهة بناءً على food_id
   const groupedReservations = Object.values(
     reservations.reduce((acc, item) => {
       const fId = item.food_id;
@@ -51,22 +50,18 @@ const Reservations = () => {
     }, {})
   );
 
-  // زيادة كمية الوجبة مع مراعاة الكمية المتوفرة لدى البائع
+  // زيادة كمية الوجبة
   const handleIncrease = async (item) => {
     try {
-      // 1. جلب بيانات الوجبة الحالية لمعرفة الكمية المتاحة في المعرض
       const foodRes = await API.get('/food');
       const currentFood = foodRes.data.find((f) => String(f.id) === String(item.food_id));
-
       const availableQty = currentFood ? parseInt(currentFood.quantity) : 0;
 
-      // 2. التحقق مما إذا كانت هناك كمية متوفرة للإضافة
       if (availableQty <= 0) {
         alert('Leider sind keine weiteren Portionen dieses Angebots verfügbar.');
         return;
       }
 
-      // 3. إضافة الحجز إذا كان متوفراً
       await API.post('/reservations/add', {
         food_id: item.food_id,
         receiver_id: user.id
@@ -76,11 +71,11 @@ const Reservations = () => {
       window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || 'Fehler beim Hinzufügen der Portion.');
+      alert(err.response?.data?.message || 'Fehler beim Hinzufügen der Portion.');
     }
   };
 
-  // إنقاص قطعة واحدة من الوجبة
+  // إنقاص قطعة واحدة
   const handleDecrease = async (item) => {
     const resIdToDelete = item.reservationIds[item.reservationIds.length - 1];
 
@@ -108,10 +103,9 @@ const Reservations = () => {
     }
   };
 
-  // حساب المجموع الكلي للسلة
   const totalPrice = reservations.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
 
-  // إتمام عملية الشراء واختيار طريقة الدفع
+  // إتمام عملية الشراء
   const handleCheckout = async () => {
     setIsProcessing(true);
     try {
@@ -140,44 +134,43 @@ const Reservations = () => {
 
   if (loading) {
     return (
-      <Container className="py-5 text-center">
-        <Spinner animation="border" variant="success" />
+      <div className="container py-5 text-center">
+        <div className="spinner-border text-success" role="status"></div>
         <p className="mt-2 text-muted">Warenkorb wird geladen...</p>
-      </Container>
+      </div>
     );
   }
 
   return (
-    <Container className="py-5">
+    <div className="container py-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="fw-bold text-success m-0">🛒 Mein Warenkorb</h2>
-        <Badge bg="success" className="fs-6 px-3 py-2 rounded-pill">
+        <span className="badge bg-success fs-6 px-3 py-2 rounded-pill">
           {reservations.length} Artikel insgesamt
-        </Badge>
+        </span>
       </div>
 
       {groupedReservations.length === 0 ? (
-        <Card className="border-0 shadow-sm p-5 text-center rounded-4">
+        <div className="card border-0 shadow-sm p-5 text-center rounded-4">
           <div className="fs-1 mb-2">📜</div>
           <h5 className="fw-bold text-secondary">Ihr Warenkorb ist leer.</h5>
           <p className="text-muted">Besuchen Sie die Startseite, um verfügbare Angebote zu entdecken.</p>
-        </Card>
+        </div>
       ) : (
-        <Row className="g-4">
+        <div className="row g-4">
           
-          {/* قسم الوجبات المدمجة */}
-          <Col lg={8}>
-            <Row className="g-3">
+          {/* قسم الوجبات */}
+          <div className="col-lg-8">
+            <div className="row g-3">
               {groupedReservations.map((item) => {
                 const singlePrice = parseFloat(item.price || 0);
                 const itemTotalPrice = singlePrice * item.cartQuantity;
 
                 return (
-                  <Col key={item.food_id} md={12}>
-                    <Card className="border-0 shadow-sm rounded-4 p-3">
-                      <Card.Body className="p-0 d-flex flex-row align-items-center justify-content-between gap-3">
+                  <div key={item.food_id} className="col-md-12">
+                    <div className="card border-0 shadow-sm rounded-4 p-3">
+                      <div className="card-body p-0 d-flex flex-row align-items-center justify-content-between gap-3">
                         
-                        {/* صورة ومعلومات الوجبة */}
                         <div className="d-flex align-items-center gap-3">
                           <img 
                             src={item.image_url ? `http://localhost:5000${item.image_url}` : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80'} 
@@ -199,52 +192,48 @@ const Reservations = () => {
                           </div>
                         </div>
 
-                        {/* أزرار الإضافة والتنقيص والعدد */}
                         <div className="d-flex align-items-center gap-3">
                           <div className="d-flex align-items-center border rounded-3 p-1 bg-light">
-                            <Button 
-                              variant="light" 
-                              size="sm" 
-                              className="fw-bold px-2 py-0 border-0"
+                            <button 
+                              type="button" 
+                              className="btn btn-light btn-sm fw-bold px-2 py-0 border-0"
                               onClick={() => handleDecrease(item)}
                             >
                               ➖
-                            </Button>
+                            </button>
 
                             <span className="fw-bold px-3 text-dark">{item.cartQuantity}</span>
 
-                            <Button 
-                              variant="light" 
-                              size="sm" 
-                              className="fw-bold px-2 py-0 border-0"
+                            <button 
+                              type="button" 
+                              className="btn btn-light btn-sm fw-bold px-2 py-0 border-0"
                               onClick={() => handleIncrease(item)}
                             >
                               ➕
-                            </Button>
+                            </button>
                           </div>
 
-                          <Button 
-                            variant="outline-danger" 
-                            size="sm" 
-                            className="rounded-3 px-2"
+                          <button 
+                            type="button" 
+                            className="btn btn-outline-danger btn-sm rounded-3 px-2"
                             title="Alle entfernen"
                             onClick={() => handleDeleteAllOfItem(item)}
                           >
                             🗑️
-                          </Button>
+                          </button>
                         </div>
 
-                      </Card.Body>
-                    </Card>
-                  </Col>
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
-            </Row>
-          </Col>
+            </div>
+          </div>
 
-          {/* ملخص الطلب وزر الشراء والدفع */}
-          <Col lg={4}>
-            <Card className="border-0 shadow-sm rounded-4 p-4">
+          {/* ملخص الطلب */}
+          <div className="col-lg-4">
+            <div className="card border-0 shadow-sm rounded-4 p-4">
               <h5 className="fw-bold text-dark mb-3">Zusammenfassung</h5>
               
               <div className="d-flex justify-content-between mb-2">
@@ -266,86 +255,105 @@ const Reservations = () => {
 
               <hr className="my-3 opacity-10" />
 
-              <Button 
-                variant="success" 
-                className="w-100 fw-bold py-3 rounded-3 shadow-sm"
+              <button 
+                type="button" 
+                className="btn btn-success w-100 fw-bold py-3 rounded-3 shadow-sm"
                 onClick={() => setShowCheckoutModal(true)}
               >
                 💳 Kauf abschließen
-              </Button>
-            </Card>
-          </Col>
+              </button>
+            </div>
+          </div>
 
-        </Row>
+        </div>
       )}
 
       {/* نافذة خيارات الدفع */}
-      <Modal show={showCheckoutModal} onHide={() => setShowCheckoutModal(false)} centered>
-        <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">💳 Zahlungsmethode wählen</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="py-3">
-          <p className="mb-3">
-            <strong>Gesamtsumme:</strong> {' '}
-            <span className="fs-5 fw-bold text-success">
-              {totalPrice === 0 ? 'Kostenlos (0.00 €)' : `${totalPrice.toFixed(2)} €`}
-            </span>
-          </p>
+      {showCheckoutModal && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 rounded-4 shadow p-2">
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">💳 Zahlungsmethode wählen</h5>
+                <button type="button" className="btn-close" onClick={() => setShowCheckoutModal(false)}></button>
+              </div>
+              <div className="modal-body py-3">
+                <p className="mb-3">
+                  <strong>Gesamtsumme:</strong> {' '}
+                  <span className="fs-5 fw-bold text-success">
+                    {totalPrice === 0 ? 'Kostenlos (0.00 €)' : `${totalPrice.toFixed(2)} €`}
+                  </span>
+                </p>
 
-          <h6 className="fw-bold mb-2">Wählen Sie Ihre Zahlungsmethode:</h6>
+                <h6 className="fw-bold mb-2">Wählen Sie Ihre Zahlungsmethode:</h6>
 
-          <Form className="d-flex flex-column gap-2 mb-3">
-            <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between cursor-pointer ${selectedPayment === 'Barzahlung' ? 'border-success bg-success-subtle' : ''}`}>
-              <Form.Check
-                type="radio"
-                id="barzahlung"
-                name="payment"
-                label="💵 Barzahlung bei Abholung"
-                checked={selectedPayment === 'Barzahlung'}
-                onChange={() => setSelectedPayment('Barzahlung')}
-                className="fw-bold"
-              />
-              <small className="text-muted">Vor Ort bezahlen</small>
+                <div className="d-flex flex-column gap-2 mb-3">
+                  <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between ${selectedPayment === 'Barzahlung' ? 'border-success bg-success-subtle' : ''}`}>
+                    <div className="form-check m-0">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        id="barzahlung"
+                        name="payment"
+                        checked={selectedPayment === 'Barzahlung'}
+                        onChange={() => setSelectedPayment('Barzahlung')}
+                      />
+                      <label className="form-check-label fw-bold" htmlFor="barzahlung">
+                        💵 Barzahlung bei Abholung
+                      </label>
+                    </div>
+                    <small className="text-muted">Vor Ort bezahlen</small>
+                  </div>
+
+                  <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between ${selectedPayment === 'PayPal' ? 'border-primary bg-primary-subtle' : ''}`}>
+                    <div className="form-check m-0">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        id="paypal"
+                        name="payment"
+                        checked={selectedPayment === 'PayPal'}
+                        onChange={() => setSelectedPayment('PayPal')}
+                      />
+                      <label className="form-check-label fw-bold" htmlFor="paypal">
+                        🟦 PayPal
+                      </label>
+                    </div>
+                    <small className="text-muted">Online bezahlen</small>
+                  </div>
+
+                  <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between ${selectedPayment === 'Kreditkarte' ? 'border-info bg-info-subtle' : ''}`}>
+                    <div className="form-check m-0">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        id="kreditkarte"
+                        name="payment"
+                        checked={selectedPayment === 'Kreditkarte'}
+                        onChange={() => setSelectedPayment('Kreditkarte')}
+                      />
+                      <label className="form-check-label fw-bold" htmlFor="kreditkarte">
+                        💳 EC-Karte / Kreditkarte
+                      </label>
+                    </div>
+                    <small className="text-muted">Visa / Mastercard</small>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer border-0 pt-0">
+                <button type="button" className="btn btn-light rounded-3 fw-semibold" onClick={() => setShowCheckoutModal(false)}>
+                  Abbrechen
+                </button>
+                <button type="button" className="btn btn-success rounded-3 fw-bold px-4" onClick={handleCheckout} disabled={isProcessing}>
+                  {isProcessing ? 'Wird verarbeitet...' : 'Kostenpflichtig bestellen'}
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between cursor-pointer ${selectedPayment === 'PayPal' ? 'border-primary bg-primary-subtle' : ''}`}>
-              <Form.Check
-                type="radio"
-                id="paypal"
-                name="payment"
-                label="🟦 PayPal"
-                checked={selectedPayment === 'PayPal'}
-                onChange={() => setSelectedPayment('PayPal')}
-                className="fw-bold"
-              />
-              <small className="text-muted">Online bezahlen</small>
-            </div>
-
-            <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between cursor-pointer ${selectedPayment === 'Kreditkarte' ? 'border-info bg-info-subtle' : ''}`}>
-              <Form.Check
-                type="radio"
-                id="kreditkarte"
-                name="payment"
-                label="💳 EC-Karte / Kreditkarte"
-                checked={selectedPayment === 'Kreditkarte'}
-                onChange={() => setSelectedPayment('Kreditkarte')}
-                className="fw-bold"
-              />
-              <small className="text-muted">Visa / Mastercard</small>
-            </div>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer className="border-0 pt-0">
-          <Button variant="light" className="rounded-3 fw-semibold" onClick={() => setShowCheckoutModal(false)}>
-            Abbrechen
-          </Button>
-          <Button variant="success" className="rounded-3 fw-bold px-4" onClick={handleCheckout} disabled={isProcessing}>
-            {isProcessing ? 'Wird verarbeitet...' : 'Kostenpflichtig bestellen'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-    </Container>
+    </div>
   );
 };
 

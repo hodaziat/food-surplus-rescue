@@ -19,9 +19,9 @@ const EditFood = () => {
 
   // جلب بيانات الوجبة الحالية لملء النموذج بها
   useEffect(() => {
-    API.get('/food')
+    API.get(`/food/${id}`)
       .then((res) => {
-        const food = res.data.find((item) => String(item.id) === String(id));
+        const food = res.data;
         if (food) {
           setFormData({
             title: food.title || '',
@@ -32,13 +32,31 @@ const EditFood = () => {
           if (food.image_url) {
             setImagePreview(`http://localhost:5000${food.image_url}`);
           }
-        } else {
-          setError('Angebot nicht gefunden.');
         }
       })
-      .catch((err) => {
-        console.error(err);
-        setError('Fehler beim Laden der Daten.');
+      .catch(() => {
+        // Fallback في حال كانت النقطة جلب القائمة الكلية
+        API.get('/food')
+          .then((res) => {
+            const food = res.data.find((item) => String(item.id) === String(id));
+            if (food) {
+              setFormData({
+                title: food.title || '',
+                description: food.description || '',
+                quantity: food.quantity || '',
+                expiration_date: food.expiration_date ? food.expiration_date.split('T')[0] : ''
+              });
+              if (food.image_url) {
+                setImagePreview(`http://localhost:5000${food.image_url}`);
+              }
+            } else {
+              setError('Angebot nicht gefunden.');
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            setError('Fehler beim Laden der Daten.');
+          });
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -71,7 +89,7 @@ const EditFood = () => {
       navigate('/');
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.error || 'Fehler beim Aktualisieren.');
+      setError(err.response?.data?.message || 'Fehler beim Aktualisieren.');
     }
   };
 
