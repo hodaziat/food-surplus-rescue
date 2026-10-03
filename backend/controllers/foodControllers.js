@@ -36,7 +36,7 @@ const createFoodListing = async (req, res) => {
     }
 };
 
-// 2. جلب جميع الإعلانات المتاحة
+// 2. جلب جميع الإعلانات المتاحة وغير المنتهية الصلاحية
 const getAllFoodListings = async (req, res) => {
     try {
         const listings = await pool.query(
@@ -44,6 +44,7 @@ const getAllFoodListings = async (req, res) => {
              FROM food_listings 
              JOIN users ON food_listings.donor_id = users.id 
              WHERE status = 'available' 
+               AND expiration_date >= CURRENT_DATE 
              ORDER BY created_at DESC`
         );
 
