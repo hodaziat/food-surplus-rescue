@@ -56,7 +56,6 @@ const SiteReviews = () => {
     }
   };
 
-  // دالة حذف التقييم الخاص بالمستخدم
   const handleDelete = async (reviewId) => {
     if (window.confirm('Möchten Sie Ihre Bewertung wirklich löschen?')) {
       try {
@@ -70,31 +69,34 @@ const SiteReviews = () => {
     }
   };
 
+  const isDark = document.body.classList.contains('dark-mode-active');
+
   return (
-    <div className="py-5 bg-light rounded-4 my-5 p-4 shadow-sm">
+    <div className={`py-5 rounded-4 my-5 p-4 shadow-sm ${isDark ? 'bg-dark text-white' : 'bg-light'}`}>
       <div className="container">
         
         {/* ملخص تقييم الموقع */}
         <div className="text-center mb-5">
-          <h2 className="fw-bold text-dark">⭐ Was unsere Nutzer über uns sagen</h2>
+          <h2 className={`fw-bold ${isDark ? 'text-white' : 'text-dark'}`}>⭐ Was unsere Nutzer über uns sagen</h2>
           <div className="d-flex align-items-center justify-content-center gap-2 my-2">
             <span className="display-5 fw-bold text-success">{averageRating}</span>
             <div className="text-start">
               <div className="fs-4 text-warning">
                 {'★'.repeat(Math.round(averageRating))}{'☆'.repeat(5 - Math.round(averageRating))}
               </div>
-              <small className="text-muted">Basierend auf {totalReviews} Bewertungen</small>
+              <small className={isDark ? 'text-light opacity-75' : 'text-muted'}>
+                Basierend auf {totalReviews} Bewertungen
+              </small>
             </div>
           </div>
         </div>
 
         {/* نموذج إضافة تقييم جديد للموقع */}
         {user ? (
-          <div className="card border-0 shadow-sm rounded-4 p-4 mb-5 mx-auto" style={{ maxWidth: '600px' }}>
-            <h5 className="fw-bold text-dark mb-3">✍️ Schreiben Sie eine Bewertung für die Plattform</h5>
+          <div className={`card border-0 shadow-sm rounded-4 p-4 mb-5 mx-auto ${isDark ? 'bg-secondary text-white' : ''}`} style={{ maxWidth: '600px' }}>
+            <h5 className={`fw-bold mb-3 ${isDark ? 'text-white' : 'text-dark'}`}>✍️ Schreiben Sie eine Bewertung für die Plattform</h5>
             <form onSubmit={handleSubmit}>
               
-              {/* اختيار النجوم */}
               <div className="mb-3">
                 <label className="form-label fw-semibold">Ihre Bewertung:</label>
                 <div className="fs-3 text-warning">
@@ -145,17 +147,16 @@ const SiteReviews = () => {
           <div className="row g-4">
             {reviews.map((rev) => (
               <div key={rev.id} className="col-md-6 col-lg-4">
-                <div className="card border-0 shadow-sm rounded-4 h-100 p-3">
+                <div className={`card border-0 shadow-sm rounded-4 h-100 p-3 ${isDark ? 'bg-secondary text-white' : ''}`}>
                   <div className="card-body d-flex flex-column justify-content-between">
                     <div>
                       <div className="d-flex justify-content-between align-items-center mb-2">
-                        <strong className="text-dark">👤 {rev.user_name}</strong>
+                        <strong className={isDark ? 'text-white' : 'text-dark'}>👤 {rev.user_name}</strong>
                         <div className="d-flex align-items-center gap-2">
                           <span className="text-warning fw-bold">
                             {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
                           </span>
 
-                          {/* زر الحذف يظهر فقط لصاحب التقييم */}
                           {user && Number(rev.user_id) === Number(user.id) && (
                             <button 
                               type="button"
@@ -168,10 +169,10 @@ const SiteReviews = () => {
                           )}
                         </div>
                       </div>
-                      <p className="text-muted small mb-2">{rev.comment}</p>
+                      <p className={`small mb-2 ${isDark ? 'text-light' : 'text-muted'}`}>{rev.comment}</p>
                     </div>
 
-                    <small className="text-secondary opacity-75 d-block text-end mt-2" style={{ fontSize: '0.75rem' }}>
+                    <small className={`d-block text-end mt-2 ${isDark ? 'text-light opacity-75' : 'text-secondary'}`} style={{ fontSize: '0.75rem' }}>
                       📅 {new Date(rev.created_at).toLocaleDateString('de-DE')}
                     </small>
                   </div>

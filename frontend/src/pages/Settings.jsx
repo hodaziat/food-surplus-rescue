@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 const Settings = () => {
-  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(() => {
+    return localStorage.getItem('emailNotifications') === 'true';
+  });
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
@@ -23,13 +25,14 @@ const Settings = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     localStorage.setItem('lang', language);
+    localStorage.setItem('emailNotifications', emailNotifications);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
   return (
-    <div className="container py-5">
-      <div className="card border-0 shadow-sm p-4 mx-auto rounded-4 settings-card" style={{ maxWidth: '600px' }}>
+    <div className={`container py-5 ${darkMode ? 'text-white' : ''}`}>
+      <div className={`card border-0 shadow-sm p-4 mx-auto rounded-4 settings-card ${darkMode ? 'bg-secondary text-white' : ''}`} style={{ maxWidth: '600px' }}>
         <h2 className="fw-bold text-success mb-4">⚙️ Einstellungen</h2>
 
         {saved && (
@@ -71,7 +74,7 @@ const Settings = () => {
           <div className="mb-4">
             <label className="form-label fw-semibold small">Sprache / Language</label>
             <select 
-              className="form-select py-2 rounded-3"
+              className={`form-select py-2 rounded-3 ${darkMode ? 'bg-dark text-white border-secondary' : ''}`}
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
             >

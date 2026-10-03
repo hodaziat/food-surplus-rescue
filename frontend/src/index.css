@@ -11,6 +11,7 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
 /* تفعيل الوضع الداكن الشامل للموقع بالكامل عند تفعيله في الإعدادات */
 body.dark-mode-active {
   background-color: #121212 !important;
@@ -36,11 +37,54 @@ body.dark-mode-active p,
 body.dark-mode-active span,
 body.dark-mode-active label {
   color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* تنسيق خاص للنصوص الباهتة أو التوضيحية لتبقى واضحة ومرئية */
+body.dark-mode-active .text-muted,
+body.dark-mode-active .text-secondary {
+  color: #e0e0e0 !important;
+  opacity: 1 !important;
 }
 
 body.dark-mode-active .form-control,
-body.dark-mode-active .form-select {
+body.dark-mode-active .form-select,
+body.dark-mode-active input,
+body.dark-mode-active textarea {
   background-color: #2b2b2b !important;
   color: #ffffff !important;
   border-color: #444444 !important;
+}
+
+/* إظهار نصوص البحث التوضيحية (Placeholder) بوضوح */
+body.dark-mode-active input::placeholder,
+body.dark-mode-active textarea::placeholder {
+  color: #aaaaaa !important;
+  opacity: 1;
+}
+
+/* إزالة الشفافية وإجبار أي عنوان أو عنصر باهت على الظهور بوضوح تام */
+body.dark-mode-active [style*="color"],
+body.dark-mode-active [style*="opacity"] {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+/* إصلاح خلفية الصفحة الرئيسية وعناوين التقييمات في الوضع الداكن */
+body.dark-mode-active div[style*="backgroundColor"] {
+  background-color: #121212 !important;
+}
+
+body.dark-mode-active h2, 
+body.dark-mode-active h3, 
+body.dark-mode-active h4, 
+body.dark-mode-active h5 {
+  color: #ffffff !important;
+}
+
+/* إجبار قسم التقييمات وعناصره على الوضوح في الوضع الداكن */
+body.dark-mode-active .site-reviews,
+body.dark-mode-active div:has(> .site-reviews),
+body.dark-mode-active div[style*="color"] {
+  color: #ffffff !important;
+  opacity: 1 !important;
 }

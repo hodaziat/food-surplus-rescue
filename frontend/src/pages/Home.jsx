@@ -43,12 +43,10 @@ const Home = () => {
     }
   };
 
-  // تصفية العروض بناءً على البحث والفئة
   const filteredListings = listings.filter((item) => {
     const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    // جعل مطابقة الفئة مرنة جداً لمنع أي اختلاف في كتابة النص
     const isAllCategories = selectedCategory === 'Alle' || 
                             selectedCategory === 'Alle Kategorien' || 
                             selectedCategory.includes('جميع الفئات');
@@ -63,8 +61,10 @@ const Home = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const isDark = document.body.classList.contains('dark-mode-active');
+
   return (
-    <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', paddingBottom: '60px' }}>
+    <div style={{ backgroundColor: isDark ? '#121212' : '#f4f6f8', minHeight: '100vh', paddingBottom: '60px' }}>
       
       {/* 1. قسم الترحيب */}
       <HeroBanner currentUser={currentUser} />
@@ -78,9 +78,9 @@ const Home = () => {
           </div>
           
           <div className="col-lg-4 d-flex flex-column gap-3">
-            <div className="card border-0 shadow-sm rounded-4">
+            <div className={`card border-0 shadow-sm rounded-4 ${isDark ? 'bg-secondary text-white' : ''}`}>
               <div className="card-body p-3">
-                <h6 className="fw-bold text-dark mb-3">📊 Erfolgs-Dashboard</h6>
+                <h6 className={`fw-bold mb-3 ${isDark ? 'text-white' : 'text-dark'}`}>📊 Erfolgs-Dashboard</h6>
                 <div className="row g-2 text-center">
                   <div className="col-4">
                     <div className="p-2 bg-success text-white rounded-3 shadow-sm">
@@ -89,7 +89,7 @@ const Home = () => {
                     </div>
                   </div>
                   <div className="col-4">
-                    <div className="p-2 bg-dark text-white rounded-3 shadow-sm">
+                    <div className="p-2 bg-dark text-white rounded-3 shadow-sm border border-secondary">
                       <h4 className="fw-bold mb-0">12kg</h4>
                       <small style={{ fontSize: '10px' }}>CO₂ gespart</small>
                     </div>
@@ -104,20 +104,20 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="card border-0 shadow-sm rounded-4 flex-fill">
+            <div className={`card border-0 shadow-sm rounded-4 flex-fill ${isDark ? 'bg-secondary text-white' : ''}`}>
               <div className="card-body p-3">
-                <h6 className="fw-bold text-dark mb-2">Schnelllinks</h6>
-                <div className="list-group list-group-flush">
-                  <Link to="/profile" className="list-group-item list-group-item-action border-0 px-0 py-1 text-secondary fw-semibold text-decoration-none small">
+                <h6 className={`fw-bold mb-2 ${isDark ? 'text-white' : 'text-dark'}`}>Schnelllinks</h6>
+                <div className="list-group list-group-flush bg-transparent">
+                  <Link to="/profile" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                     👤 Mein Profil
                   </Link>
-                  <Link to="/reservations" className="list-group-item list-group-item-action border-0 px-0 py-1 text-secondary fw-semibold text-decoration-none small">
+                  <Link to="/reservations" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                     📜 Meine Reservierungen
                   </Link>
-                  <Link to="/partners" className="list-group-item list-group-item-action border-0 px-0 py-1 text-secondary fw-semibold text-decoration-none small">
+                  <Link to="/partners" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                     🤝 Soziale Partner
                   </Link>
-                  <Link to="/settings" className="list-group-item list-group-item-action border-0 px-0 py-1 text-secondary fw-semibold text-decoration-none small">
+                  <Link to="/settings" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                     ⚙️ Einstellungen
                   </Link>
                 </div>
@@ -140,7 +140,7 @@ const Home = () => {
 
         {/* الصف الثالث: الوجبات */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4 className="fw-bold text-dark m-0">📍 Verfügbare Lebensmittel</h4>
+          <h4 className={`fw-bold m-0 ${isDark ? 'text-white' : 'text-dark'}`}>📍 Verfügbare Lebensmittel</h4>
           <span className="badge bg-success fs-6 px-3 py-2 rounded-pill">
             {filteredListings.length} Angebote
           </span>
@@ -151,13 +151,13 @@ const Home = () => {
             <div className="spinner-border text-success" role="status">
               <span className="visually-hidden">Laden...</span>
             </div>
-            <p className="mt-2 text-muted">Angebote werden geladen...</p>
+            <p className={`mt-2 ${isDark ? 'text-light' : 'text-muted'}`}>Angebote werden geladen...</p>
           </div>
         ) : filteredListings.length === 0 ? (
-          <div className="card border-0 shadow-sm text-center p-5 rounded-4">
+          <div className={`card border-0 shadow-sm text-center p-5 rounded-4 ${isDark ? 'bg-secondary text-white' : ''}`}>
             <div className="fs-1 mb-3">🔍</div>
-            <h5 className="fw-bold text-secondary">Keine passenden Angebote gefunden.</h5>
-            <p className="text-muted">Versuchen Sie einen anderen Suchbegriff oder eine andere Kategorie.</p>
+            <h5 className={`fw-bold ${isDark ? 'text-white' : 'text-secondary'}`}>Keine passenden Angebote gefunden.</h5>
+            <p className={isDark ? 'text-light' : 'text-muted'}>Versuchen Sie einen anderen Suchbegriff oder eine andere Kategorie.</p>
             {currentUser && currentUser.role === 'donor' && (
               <div>
                 <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
