@@ -90,7 +90,8 @@ const Home = () => {
                   </div>
                   <div className="col-4">
                     <div className="p-2 bg-dark text-white rounded-3 shadow-sm border border-secondary">
-                      <h4 className="fw-bold mb-0">12kg</h4>
+                      {/* حساب الـ CO2 بشكل ديناميكي بناءً على عدد الوجبات */}
+                      <h4 className="fw-bold mb-0">{(listings.length * 3)}kg</h4>
                       <small style={{ fontSize: '10px' }}>CO₂ gespart</small>
                     </div>
                   </div>
@@ -157,7 +158,7 @@ const Home = () => {
           <div className={`card border-0 shadow-sm text-center p-5 rounded-4 ${isDark ? 'bg-secondary text-white' : ''}`}>
             <div className="fs-1 mb-3">🔍</div>
             <h5 className={`fw-bold ${isDark ? 'text-white' : 'text-secondary'}`}>Keine passenden Angebote gefunden.</h5>
-            <p className={isDark ? 'text-light' : 'text-muted'}>Versuchen Sie einen anderen Suchbegriff oder eine andere Kategorie.</p>
+            <p className={isDark ? 'text-light' : 'text-muted'}>Versuchen Sie einen anderen Suchbegriff أو eine andere Kategorie.</p>
             {currentUser && currentUser.role === 'donor' && (
               <div>
                 <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">

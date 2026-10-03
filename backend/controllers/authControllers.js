@@ -1,4 +1,9 @@
 const pool = require('../config/db');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// مفتاح سري لتوليد التوكن (يفضل أن يكون في ملف .env، سنضعه هنا لضمان عمله مباشرة)
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_123';
 
 // 1. تسجيل الدخول
 const loginUser = async (req, res) => {
@@ -14,13 +19,23 @@ const loginUser = async (req, res) => {
         const userData = userResult.rows[0];
         const storedPassword = userData.password || userData.passwort;
 
-        if (storedPassword !== password) {
+        // مقارنة كلمة المرور المدخلة مع كلمة المرور المشفرة في قاعدة البيانات
+        const isMatch = await bcrypt.compare(password, storedPassword);
+
+        if (!isMatch) {
             return res.status(400).json({ message: 'E-Mail oder Passwort falsch.' });
         }
 
+        // توليد توكن JWT حقيقي
+        const token = jwt.sign(
+            { id: userData.id, email: userData.email, role: userData.role || 'user' },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
         res.status(200).json({
             message: 'Login erfolgreich',
-            token: 'jwt_token_example',
+            token,
             user: { 
                 id: userData.id, 
                 name: userData.name || userData.username || 'User', 
@@ -46,19 +61,30 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'E-Mail bereits registriert.' });
         }
 
-        // إدراج الحساب الجديد في قاعدة البيانات
+        // تشفير كلمة المرور قبل حفظها
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // إدراج الحساب الجديد في قاعدة البيانات مع كلمة المرور المشفرة
         const newUser = await pool.query(
             `INSERT INTO users (name, email, password, role) 
              VALUES ($1, $2, $3, $4) 
              RETURNING *`,
-            [name || 'User', email, password, role || 'user']
+            [name || 'User', email, hashedPassword, role || 'user']
         );
 
         const userData = newUser.rows[0];
 
+        // توليد توكن JWT للمستخدم الجديد
+        const token = jwt.sign(
+            { id: userData.id, email: userData.email, role: userData.role },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
         res.status(201).json({
             message: 'Registrierung erfolgreich',
-            token: 'jwt_token_example',
+            token,
             user: {
                 id: userData.id,
                 name: userData.name || userData.username || name,
@@ -112,11 +138,17 @@ const changePassword = async (req, res) => {
 
         const storedPassword = userResult.rows[0].password;
 
-        if (storedPassword !== currentPassword) {
+        // التحقق من صحة كلمة المرور الحالية
+        const isMatch = await bcrypt.compare(currentPassword, storedPassword);
+        if (!isMatch) {
             return res.status(400).json({ message: 'Das aktuelle Passwort ist falsch.' });
         }
 
-        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [newPassword, id]);
+        // تشفير كلمة المرور الجديدة
+        const salt = await bcrypt.genSalt(10);
+        const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedNewPassword, id]);
 
         res.status(200).json({ message: 'Passwort erfolgreich geändert' });
     } catch (err) {
