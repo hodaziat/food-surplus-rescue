@@ -1,38 +1,42 @@
-.App {
-  text-align: center;
+/* Custom Dark Mode Rules */
+body.dark-mode-active,
+body.dark-mode-active div[style*="backgroundColor"] {
+  background-color: #121212 !important;
+  color: #ffffff !important;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+body.dark-mode-active .navbar,
+body.dark-mode-active nav,
+body.dark-mode-active header {
+  background-color: #1a1a1a !important;
+  border-bottom: 1px solid #2d2d2d !important;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+body.dark-mode-active .navbar-brand,
+body.dark-mode-active .nav-link {
+  color: #ffffff !important;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+body.dark-mode-active .card,
+body.dark-mode-active .settings-card {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+  border-color: #333333 !important;
 }
 
-.App-link {
-  color: #61dafb;
+body.dark-mode-active .text-dark,
+body.dark-mode-active .text-secondary,
+body.dark-mode-active label {
+  color: #e0e0e0 !important;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+body.dark-mode-active .text-muted {
+  color: #aaaaaa !important;
+}
+
+body.dark-mode-active .form-select,
+body.dark-mode-active .form-control {
+  background-color: #2b2b2b !important;
+  color: #ffffff !important;
+  border-color: #444444 !important;
 }
