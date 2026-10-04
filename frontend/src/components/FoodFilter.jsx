@@ -24,9 +24,9 @@ const FoodFilter = ({ searchTerm, setSearchTerm, selectedCategory, setSelectedCa
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
               <option value="Alle">Alle Kategorien (جميع الفئات)</option>
-              <option value="Bäckerei">🥖 Backwaren (مخبوزات)</option>
+              <option value="Backwaren">🥖 Backwaren (مخبوزات)</option>
               <option value="Obst & Gemüse">🍎 Obst & Gemüse (فواكه وخضار)</option>
-              <option value="Gekochtes">🍲 Gekochte Speisen (وجبات مطبوخة)</option>
+              <option value="Gekochte Speisen">🍲 Gekochte Speisen (وجبات مطبوخة)</option>
               <option value="Sonstiges">📦 Sonstiges (أخرى)</option>
             </select>
           </div>

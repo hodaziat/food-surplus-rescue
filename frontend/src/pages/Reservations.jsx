@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../services/api';
-import { downloadReservationPDF } from '../utils/pdfGenerator'; // استيراد دالة الـ PDF
+import { downloadReservationPDF } from '../utils/pdfGenerator';
+import CheckoutModal from '../components/CheckoutModal'; // استيراد نافذة الدفع المستقلة
 
 const Reservations = () => {
   const [reservations, setReservations] = useState([]);
@@ -8,8 +9,6 @@ const Reservations = () => {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState('Barzahlung');
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // حالة لحفظ بيانات آخر طلب ناجح من أجل إظهار زر الـ PDF
   const [latestReceipt, setLatestReceipt] = useState(null);
 
   const storedUser = localStorage.getItem('user');
@@ -36,7 +35,6 @@ const Reservations = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // دمج الوجبات المتشابهة بناءً على food_id
   const groupedReservations = Object.values(
     reservations.reduce((acc, item) => {
       const fId = item.food_id;
@@ -54,7 +52,6 @@ const Reservations = () => {
     }, {})
   );
 
-  // زيادة كمية الوجبة
   const handleIncrease = async (item) => {
     try {
       const foodRes = await API.get('/food');
@@ -79,7 +76,6 @@ const Reservations = () => {
     }
   };
 
-  // إنقاص قطعة واحدة
   const handleDecrease = async (item) => {
     const resIdToDelete = item.reservationIds[item.reservationIds.length - 1];
 
@@ -93,7 +89,6 @@ const Reservations = () => {
     }
   };
 
-  // حذف جميع القطع من هذا النوع
   const handleDeleteAllOfItem = async (item) => {
     if (window.confirm('Möchten Sie diese Position komplett entfernen?')) {
       try {
@@ -109,11 +104,9 @@ const Reservations = () => {
 
   const totalPrice = reservations.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
 
-  // إتمام عملية الشراء وتفريغ السلة بنجاح مؤكد
   const handleCheckout = async () => {
     setIsProcessing(true);
     
-    // تجهيز بيانات الإيصال قبل تفريغ السلة
     const firstItem = reservations[0];
     const receiptData = {
       id: firstItem ? (firstItem.reservation_id || firstItem.id) : '123',
@@ -122,7 +115,6 @@ const Reservations = () => {
     };
 
     try {
-      // محاولة تحديث حالة الحجوزات في السيرفر
       await Promise.all(
         reservations.map((item) =>
           API.put(`/reservations/checkout/${item.reservation_id || item.id}`, {
@@ -135,7 +127,6 @@ const Reservations = () => {
     } catch (err) {
       console.error('Checkout error:', err);
     } finally {
-      // بغض النظر عن الاستجابة، سنقوم بتفريغ السلة وإظهار زر التحميل فوراً لضمان راحة المستخدم
       setLatestReceipt(receiptData);
       setShowCheckoutModal(false);
       setReservations([]); 
@@ -162,7 +153,6 @@ const Reservations = () => {
         </span>
       </div>
 
-      {/* إذا تم الشراء بنجاح، اعرض بطاقة النجاح مع زر تنزيل الـ PDF */}
       {latestReceipt ? (
         <div className="card border-0 shadow-sm p-5 text-center rounded-4 bg-light">
           <div className="fs-1 mb-2">🎉</div>
@@ -192,8 +182,6 @@ const Reservations = () => {
         </div>
       ) : (
         <div className="row g-4">
-          
-          {/* قسم الوجبات */}
           <div className="col-lg-8">
             <div className="row g-3">
               {groupedReservations.map((item) => {
@@ -204,7 +192,6 @@ const Reservations = () => {
                   <div key={item.food_id} className="col-md-12">
                     <div className="card border-0 shadow-sm rounded-4 p-3">
                       <div className="card-body p-0 d-flex flex-row align-items-center justify-content-between gap-3">
-                        
                         <div className="d-flex align-items-center gap-3">
                           <img 
                             src={item.image_url ? `http://localhost:5000${item.image_url}` : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80'} 
@@ -215,48 +202,19 @@ const Reservations = () => {
                           <div>
                             <h5 className="fw-bold text-dark mb-1">{item.title}</h5>
                             <div className="text-success fw-bold fs-6">
-                              {singlePrice === 0 ? (
-                                'GRATIS'
-                              ) : (
-                                <span>
-                                  {singlePrice.toFixed(2)} € <small className="text-muted fw-normal">(Gesamt: {itemTotalPrice.toFixed(2)} €)</small>
-                                </span>
-                              )}
+                              {singlePrice === 0 ? 'GRATIS' : `${singlePrice.toFixed(2)} € (Gesamt: ${itemTotalPrice.toFixed(2)} €)`}
                             </div>
                           </div>
                         </div>
 
                         <div className="d-flex align-items-center gap-3">
                           <div className="d-flex align-items-center border rounded-3 p-1 bg-light">
-                            <button 
-                              type="button" 
-                              className="btn btn-light btn-sm fw-bold px-2 py-0 border-0"
-                              onClick={() => handleDecrease(item)}
-                            >
-                              ➖
-                            </button>
-
+                            <button type="button" className="btn btn-light btn-sm fw-bold px-2 py-0 border-0" onClick={() => handleDecrease(item)}>➖</button>
                             <span className="fw-bold px-3 text-dark">{item.cartQuantity}</span>
-
-                            <button 
-                              type="button" 
-                              className="btn btn-light btn-sm fw-bold px-2 py-0 border-0"
-                              onClick={() => handleIncrease(item)}
-                            >
-                              ➕
-                            </button>
+                            <button type="button" className="btn btn-light btn-sm fw-bold px-2 py-0 border-0" onClick={() => handleIncrease(item)}>➕</button>
                           </div>
-
-                          <button 
-                            type="button" 
-                            className="btn btn-outline-danger btn-sm rounded-3 px-2"
-                            title="Alle entfernen"
-                            onClick={() => handleDeleteAllOfItem(item)}
-                          >
-                            🗑️
-                          </button>
+                          <button type="button" className="btn btn-outline-danger btn-sm rounded-3 px-2" onClick={() => handleDeleteAllOfItem(item)}>🗑️️</button>
                         </div>
-
                       </div>
                     </div>
                   </div>
@@ -265,128 +223,40 @@ const Reservations = () => {
             </div>
           </div>
 
-          {/* ملخص الطلب */}
           <div className="col-lg-4">
             <div className="card border-0 shadow-sm rounded-4 p-4">
               <h5 className="fw-bold text-dark mb-3">Zusammenfassung</h5>
-              
               <div className="d-flex justify-content-between mb-2">
                 <span className="text-muted">Anzahl Positionen:</span>
                 <span className="fw-semibold">{groupedReservations.length}</span>
               </div>
-
               <div className="d-flex justify-content-between mb-2">
                 <span className="text-muted">Gesamtstückzahl:</span>
                 <span className="fw-semibold">{reservations.length} Stk.</span>
               </div>
-
               <div className="d-flex justify-content-between mb-3 fs-5 fw-bold">
                 <span>Gesamtsumme:</span>
-                <span className="text-success">
-                  {totalPrice === 0 ? 'Kostenlos' : `${totalPrice.toFixed(2)} €`}
-                </span>
+                <span className="text-success">{totalPrice === 0 ? 'Kostenlos' : `${totalPrice.toFixed(2)} €`}</span>
               </div>
-
               <hr className="my-3 opacity-10" />
-
-              <button 
-                type="button" 
-                className="btn btn-success w-100 fw-bold py-3 rounded-3 shadow-sm"
-                onClick={() => setShowCheckoutModal(true)}
-              >
+              <button type="button" className="btn btn-success w-100 fw-bold py-3 rounded-3 shadow-sm" onClick={() => setShowCheckoutModal(true)}>
                 💳 Kauf abschließen
               </button>
             </div>
           </div>
-
         </div>
       )}
 
-      {/* نافذة خيارات الدفع */}
-      {showCheckoutModal && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 rounded-4 shadow p-2">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold">💳 Zahlungsmethode wählen</h5>
-                <button type="button" className="btn-close" onClick={() => setShowCheckoutModal(false)}></button>
-              </div>
-              <div className="modal-body py-3">
-                <p className="mb-3">
-                  <strong>Gesamtsumme:</strong> {' '}
-                  <span className="fs-5 fw-bold text-success">
-                    {totalPrice === 0 ? 'Kostenlos (0.00 €)' : `${totalPrice.toFixed(2)} €`}
-                  </span>
-                </p>
-
-                <h6 className="fw-bold mb-2">Wählen Sie Ihre Zahlungsmethode:</h6>
-
-                <div className="d-flex flex-column gap-2 mb-3">
-                  <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between ${selectedPayment === 'Barzahlung' ? 'border-success bg-success-subtle' : ''}`}>
-                    <div className="form-check m-0">
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        id="barzahlung"
-                        name="payment"
-                        checked={selectedPayment === 'Barzahlung'}
-                        onChange={() => setSelectedPayment('Barzahlung')}
-                      />
-                      <label className="form-check-label fw-bold" htmlFor="barzahlung">
-                        💵 Barzahlung bei Abholung
-                      </label>
-                    </div>
-                    <small className="text-muted">Vor Ort bezahlen</small>
-                  </div>
-
-                  <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between ${selectedPayment === 'PayPal' ? 'border-primary bg-primary-subtle' : ''}`}>
-                    <div className="form-check m-0">
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        id="paypal"
-                        name="payment"
-                        checked={selectedPayment === 'PayPal'}
-                        onChange={() => setSelectedPayment('PayPal')}
-                      />
-                      <label className="form-check-label fw-bold" htmlFor="paypal">
-                        🟦 PayPal
-                      </label>
-                    </div>
-                    <small className="text-muted">Online bezahlen</small>
-                  </div>
-
-                  <div className={`border p-3 rounded-3 d-flex align-items-center justify-content-between ${selectedPayment === 'Kreditkarte' ? 'border-info bg-info-subtle' : ''}`}>
-                    <div className="form-check m-0">
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        id="kreditkarte"
-                        name="payment"
-                        checked={selectedPayment === 'Kreditkarte'}
-                        onChange={() => setSelectedPayment('Kreditkarte')}
-                      />
-                      <label className="form-check-label fw-bold" htmlFor="kreditkarte">
-                        💳 EC-Karte / Kreditkarte
-                      </label>
-                    </div>
-                    <small className="text-muted">Visa / Mastercard</small>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer border-0 pt-0">
-                <button type="button" className="btn btn-light rounded-3 fw-semibold" onClick={() => setShowCheckoutModal(false)}>
-                  Abbrechen
-                </button>
-                <button type="button" className="btn btn-success rounded-3 fw-bold px-4" onClick={handleCheckout} disabled={isProcessing}>
-                  {isProcessing ? 'Wird verarbeitet...' : 'Kostenpflichtig bestellen'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* استدعاء نافذة الدفع المنفصلة */}
+      <CheckoutModal 
+        show={showCheckoutModal}
+        onClose={() => setShowCheckoutModal(false)}
+        onConfirm={handleCheckout}
+        selectedPayment={selectedPayment}
+        setSelectedPayment={setSelectedPayment}
+        totalPrice={totalPrice}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 };
