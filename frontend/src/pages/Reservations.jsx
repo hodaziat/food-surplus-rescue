@@ -115,6 +115,7 @@ const Reservations = () => {
     };
 
     try {
+      // تحديث حالة الحجز إلى مؤكد أو مدفوع
       await Promise.all(
         reservations.map((item) =>
           API.put(`/reservations/checkout/${item.reservation_id || item.id}`, {
@@ -122,6 +123,13 @@ const Reservations = () => {
             payment_status: selectedPayment === 'Barzahlung' ? 'Pending' : 'Paid',
             status: 'confirmed'
           }).catch((err) => console.log('Single checkout note:', err))
+        )
+      );
+
+      // حذف العناصر من السلة لكي تختفي تماماً بعد إتمام الشراء
+      await Promise.all(
+        reservations.map((item) =>
+          API.delete(`/reservations/${item.reservation_id || item.id}`).catch((err) => console.log('Delete note:', err))
         )
       );
     } catch (err) {
@@ -213,7 +221,7 @@ const Reservations = () => {
                             <span className="fw-bold px-3 text-dark">{item.cartQuantity}</span>
                             <button type="button" className="btn btn-light btn-sm fw-bold px-2 py-0 border-0" onClick={() => handleIncrease(item)}>➕</button>
                           </div>
-                          <button type="button" className="btn btn-outline-danger btn-sm rounded-3 px-2" onClick={() => handleDeleteAllOfItem(item)}>🗑️️</button>
+                          <button type="button" className="btn btn-outline-danger btn-sm rounded-3 px-2" onClick={() => handleDeleteAllOfItem(item)}>🗑</button>
                         </div>
                       </div>
                     </div>
