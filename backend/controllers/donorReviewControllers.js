@@ -80,6 +80,35 @@ const getDonorReviews = async (req, res) => {
     }
 };
 
+// جلب جميع تقييمات المطاعم للأدمن
+const getAllDonorReviews = async (req, res) => {
+    try {
+        const reviews = await pool.query(
+            `SELECT 
+                donor_reviews.id,
+                donor_reviews.donor_id,
+                donor_reviews.reviewer_id,
+                donor_reviews.rating,
+                donor_reviews.comment,
+                donor_reviews.reply,
+                donor_reviews.created_at,
+                u1.name AS reviewer_name,
+                u2.name AS donor_name
+             FROM donor_reviews
+             JOIN users u1 ON donor_reviews.reviewer_id = u1.id
+             JOIN users u2 ON donor_reviews.donor_id = u2.id
+             ORDER BY donor_reviews.created_at DESC`
+        );
+
+        res.status(200).json({
+            reviews: reviews.rows
+        });
+    } catch (err) {
+        console.error('Get All Donor Reviews Error:', err.message);
+        res.status(500).json({ message: 'Serverfehler beim Laden aller Bewertungen.' });
+    }
+};
+
 // حذف تقييم مطعم
 const deleteDonorReview = async (req, res) => {
     const { id } = req.params;
@@ -103,7 +132,6 @@ const replyToDonorReview = async (req, res) => {
     }
 
     try {
-        // التأكد من أن التقييم يخص هذا المطعم حصرياً
         const checkReview = await pool.query(
             'SELECT * FROM donor_reviews WHERE id = $1 AND donor_id = $2',
             [reviewId, donor_id]
@@ -137,5 +165,6 @@ module.exports = {
     addDonorReview,
     getDonorReviews,
     deleteDonorReview,
-    replyToDonorReview
+    replyToDonorReview,
+    getAllDonorReviews
 };

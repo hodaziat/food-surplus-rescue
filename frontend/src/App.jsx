@@ -21,6 +21,7 @@ import FoodDetails from './pages/FoodDetails';
 import SpecialRequest from './pages/SpecialRequest';
 import EditFood from './pages/EditFood';
 import DonorReviewsPage from './pages/DonorReviewsPage';
+import AdminReviewsPage from './pages/AdminReviewsPage'; // <-- تم إضافة الاستيراد الناقص هنا
 
 // مكون حماية المسارات (ProtectedRoute) بأسلوب بسيط
 const ProtectedRoute = ({ children }) => {
@@ -74,6 +75,7 @@ function App() {
             <Route path="/special-request" element={<SpecialRequest />} />
             <Route path="/edit-food/:id" element={<EditFood />} />
             <Route path="/donor-reviews" element={<DonorReviewsPage />} />
+            <Route path="/admin-reviews" element={<AdminReviewsPage />} />
 
             {/* المسارات المحمية */}
             <Route 

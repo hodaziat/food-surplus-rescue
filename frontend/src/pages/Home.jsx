@@ -55,6 +55,7 @@ const Home = () => {
   });
 
   const isDark = document.body.classList.contains('dark-mode-active');
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.user_role === 'admin');
   const isDonor = currentUser && (currentUser.role === 'donor' || currentUser.user_role === 'donor');
 
   return (
@@ -106,8 +107,12 @@ const Home = () => {
                     👤 Mein Profil
                   </Link>
 
-                  {/* إذا كان المستخدم مطعم/متبرع نعرض له صفحة التقييمات الخاصة به، وإذا كان مستخدماً عادياً نعرض له حجوزاته */}
-                  {isDonor ? (
+                  {/* إزالة خطر حجوزاتي واستبدالها بلوحة تحكم الأدمن أو تقييمات المتبرع حسب دور المستخدم */}
+                  {isAdmin ? (
+                    <Link to="/admin-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
+                      🛡️ Bewertungen verwalten
+                    </Link>
+                  ) : isDonor ? (
                     <Link to="/donor-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                       ⭐ Meine Bewertungen
                     </Link>
@@ -134,9 +139,9 @@ const Home = () => {
           <div className="col-12">
             <FoodFilter 
               searchTerm={searchTerm} 
-               setSearchTerm={setSearchTerm} 
-               selectedCategory={selectedCategory} 
-               setSelectedCategory={setSelectedCategory} 
+              setSearchTerm={setSearchTerm} 
+              selectedCategory={selectedCategory} 
+              setSelectedCategory={setSelectedCategory} 
             />
           </div>
         </div>

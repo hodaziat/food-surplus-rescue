@@ -16,8 +16,9 @@ const DonorReviews = ({ donorId, donorName }) => {
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
 
-  // التحقق مما إذا كان المستخدم الحالي هو صاحب المطعم المعني
+  // التحقق مما إذا كان المستخدم الحالي هو صاحب المطعم المعني أو مشرف (Admin)
   const isOwner = user && Number(user.id) === Number(donorId);
+  const isAdmin = user && (user.role === 'admin' || user.user_role === 'admin');
 
   const fetchReviews = useCallback(async () => {
     if (!donorId) return;
@@ -70,7 +71,7 @@ const DonorReviews = ({ donorId, donorName }) => {
   };
 
   const handleDelete = async (reviewId) => {
-    if (window.confirm('Möchten Sie Ihre Bewertung wirklich löschen?')) {
+    if (window.confirm('Möchten Sie diese Bewertung wirklich löschen?')) {
       try {
         await API.delete(`/donor-reviews/${reviewId}`);
         alert('Bewertung erfolgreich gelöscht.');
@@ -122,7 +123,7 @@ const DonorReviews = ({ donorId, donorName }) => {
         </div>
 
         {/* نموذج كتابة التقييم (لا يظهر لصاحب المطعم) */}
-        {user && !isOwner && (
+        {user && !isOwner && !isAdmin && (
           <form onSubmit={handleSubmit} className="mb-4 bg-light p-3 rounded-3">
             <h6 className="fw-bold text-dark mb-2">✍️ Partner bewerten</h6>
             
@@ -178,7 +179,9 @@ const DonorReviews = ({ donorId, donorName }) => {
                     <span className="text-warning small">
                       {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
                     </span>
-                    {user && Number(rev.reviewer_id) === Number(user.id) && (
+                    
+                    {/* زر الحذف يظهر لصاحب التقييم أو للأدمن */}
+                    {user && (Number(rev.reviewer_id) === Number(user.id) || isAdmin) && (
                       <button 
                         type="button"
                         className="btn btn-link text-danger p-0 border-0 text-decoration-none" 
@@ -204,7 +207,7 @@ const DonorReviews = ({ donorId, donorName }) => {
                   </div>
                 )}
 
-                {/* زر وصندوق كتابة الرد يظهر حصراً لصاحب المطعم المالك لهذه الصفحة */}
+                {/* زر وصندوق كتابة الرد يظهر حصراً لصاحب المطعم المالك لهذه الصفحة (وليس للأدمن) */}
                 {isOwner && !rev.reply && (
                   <div className="mt-2 ms-3">
                     <textarea
