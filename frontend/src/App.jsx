@@ -20,6 +20,7 @@ import Settings from './pages/Settings';
 import FoodDetails from './pages/FoodDetails';
 import SpecialRequest from './pages/SpecialRequest';
 import EditFood from './pages/EditFood';
+import DonorReviewsPage from './pages/DonorReviewsPage';
 
 // مكون حماية المسارات (ProtectedRoute) بأسلوب بسيط
 const ProtectedRoute = ({ children }) => {
@@ -72,6 +73,7 @@ function App() {
             <Route path="/food/:id" element={<FoodDetails />} />
             <Route path="/special-request" element={<SpecialRequest />} />
             <Route path="/edit-food/:id" element={<EditFood />} />
+            <Route path="/donor-reviews" element={<DonorReviewsPage />} />
 
             {/* المسارات المحمية */}
             <Route 

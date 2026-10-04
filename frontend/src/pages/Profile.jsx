@@ -29,8 +29,8 @@ const Profile = () => {
         setLoadingProfile(true);
 
         try {
-            // استخدام مسار /auth/ بدلاً من /users/
-            const res = await API.put(`/auth/profile/${user.id}`, { name, email });
+            // استخدام مسار /auth/ بدلاً من /users/ (تمت إزالة المتغير res غير المستخدم لتجنب التحذيرات)
+            await API.put(`/auth/profile/${user.id}`, { name, email });
             
             // تحديث الكائن المخزن في LocalStorage وفي الـ State
             const updatedUser = { ...user, name, email };

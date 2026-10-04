@@ -5,12 +5,14 @@ const router = express.Router();
 const { 
     addDonorReview, 
     getDonorReviews, 
-    deleteDonorReview 
+    deleteDonorReview,
+    replyToDonorReview 
 } = require('../controllers/donorReviewControllers');
 
 // Routes
 router.post('/add', addDonorReview);
 router.get('/:donorId', getDonorReviews);
 router.delete('/:id', deleteDonorReview);
+router.post('/reply/:reviewId', replyToDonorReview);
 
 module.exports = router;

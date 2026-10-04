@@ -48,8 +48,6 @@ const Home = () => {
                           (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const isAllCategories = selectedCategory === 'Alle';
-
-    // فلترة دقيقة ومباشرة تطابق القيمة المختارة مع قاعدة البيانات
     const matchesCategory = isAllCategories || 
       (item.category && item.category.trim().toLowerCase() === selectedCategory.trim().toLowerCase());
 
@@ -57,6 +55,7 @@ const Home = () => {
   });
 
   const isDark = document.body.classList.contains('dark-mode-active');
+  const isDonor = currentUser && (currentUser.role === 'donor' || currentUser.user_role === 'donor');
 
   return (
     <div style={{ backgroundColor: isDark ? '#121212' : '#f4f6f8', minHeight: '100vh', paddingBottom: '60px' }}>
@@ -106,9 +105,18 @@ const Home = () => {
                   <Link to="/profile" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                     👤 Mein Profil
                   </Link>
-                  <Link to="/reservations" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
-                    📜 Meine Reservierungen
-                  </Link>
+
+                  {/* إذا كان المستخدم مطعم/متبرع نعرض له صفحة التقييمات الخاصة به، وإذا كان مستخدماً عادياً نعرض له حجوزاته */}
+                  {isDonor ? (
+                    <Link to="/donor-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
+                      ⭐ Meine Bewertungen
+                    </Link>
+                  ) : (
+                    <Link to="/reservations" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
+                      📜 Meine Reservierungen
+                    </Link>
+                  )}
+
                   <Link to="/partners" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                     🤝 Soziale Partner
                   </Link>
@@ -126,9 +134,9 @@ const Home = () => {
           <div className="col-12">
             <FoodFilter 
               searchTerm={searchTerm} 
-              setSearchTerm={setSearchTerm} 
-              selectedCategory={selectedCategory} 
-              setSelectedCategory={setSelectedCategory} 
+               setSearchTerm={setSearchTerm} 
+               selectedCategory={selectedCategory} 
+               setSelectedCategory={setSelectedCategory} 
             />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/api';
 
 const DonorReviews = ({ donorId, donorName }) => {
@@ -10,10 +10,16 @@ const DonorReviews = ({ donorId, donorName }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // حالة لتخزين النصوص المؤقتة لردود صاحب المطعم لكل تقييم
+  const [replyInputs, setReplyInputs] = useState({});
+
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
 
-  const fetchReviews = async () => {
+  // التحقق مما إذا كان المستخدم الحالي هو صاحب المطعم المعني
+  const isOwner = user && Number(user.id) === Number(donorId);
+
+  const fetchReviews = useCallback(async () => {
     if (!donorId) return;
     try {
       const res = await API.get(`/donor-reviews/${donorId}`);
@@ -25,11 +31,11 @@ const DonorReviews = ({ donorId, donorName }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [donorId]);
 
   useEffect(() => {
     fetchReviews();
-  }, [donorId]);
+  }, [fetchReviews]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +44,7 @@ const DonorReviews = ({ donorId, donorName }) => {
       return;
     }
 
-    if (Number(user.id) === Number(donorId)) {
+    if (isOwner) {
       alert('Sie können sich nicht selbst bewerten.');
       return;
     }
@@ -76,6 +82,28 @@ const DonorReviews = ({ donorId, donorName }) => {
     }
   };
 
+  // دالة إرسال رد صاحب المطعم
+  const handleReplySubmit = async (reviewId) => {
+    const replyText = replyInputs[reviewId];
+    if (!replyText || !replyText.trim()) {
+      alert('Bitte geben Sie eine Antwort ein.');
+      return;
+    }
+
+    try {
+      await API.post(`/donor-reviews/reply/${reviewId}`, {
+        donor_id: user.id,
+        reply: replyText
+      });
+      alert('Antwort erfolgreich gespeichert!');
+      setReplyInputs({ ...replyInputs, [reviewId]: '' });
+      fetchReviews();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Fehler beim Speichern der Antwort.');
+    }
+  };
+
   return (
     <div className="card border-0 shadow-sm rounded-4 p-4 mt-4 bg-white">
       <div className="card-body">
@@ -93,8 +121,8 @@ const DonorReviews = ({ donorId, donorName }) => {
           </div>
         </div>
 
-        {/* نموذج كتابة التقييم */}
-        {user && Number(user.id) !== Number(donorId) && (
+        {/* نموذج كتابة التقييم (لا يظهر لصاحب المطعم) */}
+        {user && !isOwner && (
           <form onSubmit={handleSubmit} className="mb-4 bg-light p-3 rounded-3">
             <h6 className="fw-bold text-dark mb-2">✍️ Partner bewerten</h6>
             
@@ -143,7 +171,7 @@ const DonorReviews = ({ donorId, donorName }) => {
         ) : (
           <div className="d-flex flex-column gap-3">
             {reviews.map((rev) => (
-              <div key={rev.id} className="border-bottom pb-2">
+              <div key={rev.id} className="border-bottom pb-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <strong className="text-dark small">👤 {rev.reviewer_name}</strong>
                   <div className="d-flex align-items-center gap-2">
@@ -167,6 +195,35 @@ const DonorReviews = ({ donorId, donorName }) => {
                 <small className="text-secondary opacity-75 d-block text-end" style={{ fontSize: '0.7rem' }}>
                   📅 {new Date(rev.created_at).toLocaleDateString('de-DE')}
                 </small>
+
+                {/* عرض رد صاحب المطعم إذا وجد */}
+                {rev.reply && (
+                  <div className="mt-2 bg-light p-2 rounded-3 border-start border-success border-4 ms-3">
+                    <small className="fw-bold text-success d-block">💬 Antwort vom Partner:</small>
+                    <small className="text-muted">{rev.reply}</small>
+                  </div>
+                )}
+
+                {/* زر وصندوق كتابة الرد يظهر حصراً لصاحب المطعم المالك لهذه الصفحة */}
+                {isOwner && !rev.reply && (
+                  <div className="mt-2 ms-3">
+                    <textarea
+                      rows={1}
+                      placeholder="Antwort als Partner schreiben..."
+                      value={replyInputs[rev.id] || ''}
+                      onChange={(e) => setReplyInputs({ ...replyInputs, [rev.id]: e.target.value })}
+                      className="form-control form-control-sm rounded-3 mb-1"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-outline-success btn-sm rounded-3"
+                      style={{ fontSize: '0.75rem' }}
+                      onClick={() => handleReplySubmit(rev.id)}
+                    >
+                      Antwort senden
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

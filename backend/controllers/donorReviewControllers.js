@@ -41,7 +41,7 @@ const addDonorReview = async (req, res) => {
     }
 };
 
-// جلب تقييمات مطعم معّين ومتوسط التقييم
+// جلب تقييمات مطعم معّين ومتوسط التقييم مع الردود
 const getDonorReviews = async (req, res) => {
     const { donorId } = req.params;
 
@@ -53,6 +53,7 @@ const getDonorReviews = async (req, res) => {
                 donor_reviews.reviewer_id,
                 donor_reviews.rating,
                 donor_reviews.comment,
+                donor_reviews.reply,
                 donor_reviews.created_at,
                 users.name AS reviewer_name
              FROM donor_reviews
@@ -92,8 +93,49 @@ const deleteDonorReview = async (req, res) => {
     }
 };
 
+// رد صاحب المطعم على التقييم الخاص بمطعمه فقط
+const replyToDonorReview = async (req, res) => {
+    const { reviewId } = req.params;
+    const { donor_id, reply } = req.body;
+
+    if (!reply || !donor_id) {
+        return res.status(400).json({ message: 'Antwort und Donor ID sind erforderlich.' });
+    }
+
+    try {
+        // التأكد من أن التقييم يخص هذا المطعم حصرياً
+        const checkReview = await pool.query(
+            'SELECT * FROM donor_reviews WHERE id = $1 AND donor_id = $2',
+            [reviewId, donor_id]
+        );
+
+        if (checkReview.rows.length === 0) {
+            return res.status(403).json({ 
+                message: 'Nicht autorisiert: Sie können nur auf Bewertungen Ihres eigenen Restaurants antworten.' 
+            });
+        }
+
+        const updatedReview = await pool.query(
+            `UPDATE donor_reviews 
+             SET reply = $1 
+             WHERE id = $2 AND donor_id = $3 RETURNING *`,
+            [reply, reviewId, donor_id]
+        );
+
+        res.status(200).json({ 
+            message: 'Antwort erfolgreich gespeichert!', 
+            review: updatedReview.rows[0] 
+        });
+
+    } catch (err) {
+        console.error('Reply Review Error:', err.message);
+        res.status(500).json({ message: 'Serverfehler beim Speichern der Antwort.' });
+    }
+};
+
 module.exports = {
     addDonorReview,
     getDonorReviews,
-    deleteDonorReview
+    deleteDonorReview,
+    replyToDonorReview
 };
