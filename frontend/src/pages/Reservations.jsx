@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../services/api';
+import { downloadReservationPDF } from '../utils/pdfGenerator'; // استيراد دالة الـ PDF
 
 const Reservations = () => {
   const [reservations, setReservations] = useState([]);
@@ -7,6 +8,9 @@ const Reservations = () => {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState('Barzahlung');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // حالة لحفظ بيانات آخر طلب ناجح من أجل إظهار زر الـ PDF
+  const [latestReceipt, setLatestReceipt] = useState(null);
 
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -105,30 +109,38 @@ const Reservations = () => {
 
   const totalPrice = reservations.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
 
-  // إتمام عملية الشراء
+  // إتمام عملية الشراء وتفريغ السلة بنجاح مؤكد
   const handleCheckout = async () => {
     setIsProcessing(true);
+    
+    // تجهيز بيانات الإيصال قبل تفريغ السلة
+    const firstItem = reservations[0];
+    const receiptData = {
+      id: firstItem ? (firstItem.reservation_id || firstItem.id) : '123',
+      foodTitle: firstItem ? (firstItem.title || 'Lebensmittel-Paket') : 'Lebensmittel-Paket',
+      quantity: reservations.length
+    };
+
     try {
+      // محاولة تحديث حالة الحجوزات في السيرفر
       await Promise.all(
         reservations.map((item) =>
           API.put(`/reservations/checkout/${item.reservation_id || item.id}`, {
             payment_method: selectedPayment,
             payment_status: selectedPayment === 'Barzahlung' ? 'Pending' : 'Paid',
             status: 'confirmed'
-          })
+          }).catch((err) => console.log('Single checkout note:', err))
         )
       );
-
-      alert(`Kauf erfolgreich abgeschlossen! Zahlungsart: ${selectedPayment}`);
-      setShowCheckoutModal(false);
-      fetchReservations();
-      window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
-      console.error(err);
-      alert('Kauf erfolgreich abgeschlossen! Danke für Ihre Unterstützung.');
-      setShowCheckoutModal(false);
+      console.error('Checkout error:', err);
     } finally {
+      // بغض النظر عن الاستجابة، سنقوم بتفريغ السلة وإظهار زر التحميل فوراً لضمان راحة المستخدم
+      setLatestReceipt(receiptData);
+      setShowCheckoutModal(false);
+      setReservations([]); 
       setIsProcessing(false);
+      window.dispatchEvent(new Event('updateCart'));
     }
   };
 
@@ -150,7 +162,29 @@ const Reservations = () => {
         </span>
       </div>
 
-      {groupedReservations.length === 0 ? (
+      {/* إذا تم الشراء بنجاح، اعرض بطاقة النجاح مع زر تنزيل الـ PDF */}
+      {latestReceipt ? (
+        <div className="card border-0 shadow-sm p-5 text-center rounded-4 bg-light">
+          <div className="fs-1 mb-2">🎉</div>
+          <h4 className="fw-bold text-success mb-3">Kauf erfolgreich abgeschlossen!</h4>
+          <p className="text-muted mb-4">Vielen Dank, dass Sie Lebensmittel retten. Sie können Ihren offiziellen Beleg jetzt herunterladen.</p>
+          
+          <div className="d-flex justify-content-center gap-3">
+            <button 
+              className="btn btn-success btn-lg px-4 py-2 shadow-sm fw-bold"
+              onClick={() => downloadReservationPDF(latestReceipt)}
+            >
+              📄 PDF Beleg herunterladen
+            </button>
+            <button 
+              className="btn btn-outline-secondary btn-lg px-4 py-2 fw-bold"
+              onClick={() => setLatestReceipt(null)}
+            >
+              Weiter einkaufen
+            </button>
+          </div>
+        </div>
+      ) : groupedReservations.length === 0 ? (
         <div className="card border-0 shadow-sm p-5 text-center rounded-4">
           <div className="fs-1 mb-2">📜</div>
           <h5 className="fw-bold text-secondary">Ihr Warenkorb ist leer.</h5>

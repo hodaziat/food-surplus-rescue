@@ -27,12 +27,12 @@ const loginUser = async (req, res) => {
         }
 
         // توليد توكن JWT حقيقي
-        const token = jwt.sign(
-            { id: userData.id, email: userData.email, role: userData.role || 'user' },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
-
+        // تعديل مدة الصلاحية لتصبح ساعة واحدة مثلاً
+const token = jwt.sign(
+    { id: userData.id, email: userData.email, role: userData.role },
+    JWT_SECRET,
+    { expiresIn: '1h' } 
+);
         res.status(200).json({
             message: 'Login erfolgreich',
             token,
@@ -79,7 +79,7 @@ const registerUser = async (req, res) => {
         const token = jwt.sign(
             { id: userData.id, email: userData.email, role: userData.role },
             JWT_SECRET,
-            { expiresIn: '7d' }
+            { expiresIn: '12h' } 
         );
 
         res.status(201).json({
