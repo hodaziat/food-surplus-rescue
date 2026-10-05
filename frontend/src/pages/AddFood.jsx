@@ -12,13 +12,34 @@ const AddFood = () => {
     price: '0',
     original_price: '0'
   });
+  
+  // حالة مسببات الحساسية والميزات المختارة
+  const [selectedTags, setSelectedTags] = useState([]);
+  
   const [isPaid, setIsPaid] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // حساب التاريخ والوقت الحالي بصيغة مناسبة لـ datetime-local لمنع التواريخ السابقة
+  // قائمة مسببات الحساسية والميزات المتاحة
+  const availableTags = [
+    { id: 'laktose', label: '🥛 Enthält Laktose' },
+    { id: 'nuesse', label: '🥜 Enthält Nüsse' },
+    { id: 'gluten', label: '🌾 Enthält Gluten' },
+    { id: 'vegan', label: '🌱 Vegan' },
+    { id: 'vegetarisch', label: '🧀 Vegetarisch' }
+  ];
+
+  // دالة تحديد/إلغاء تحديد خيار
+  const toggleTag = (label) => {
+    if (selectedTags.includes(label)) {
+      setSelectedTags(selectedTags.filter((tag) => tag !== label));
+    } else {
+      setSelectedTags([...selectedTags, label]);
+    }
+  };
+
   const getCurrentDateTimeMin = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -60,10 +81,16 @@ const AddFood = () => {
       return;
     }
 
-    // التحقق الفعلي من أن تاريخ الانتهاء ليس سابقاً للوقت الحالي
     if (new Date(formData.expiration_date) <= new Date()) {
       setError('Das Ablaufdatum muss in der Zukunft liegen.');
       return;
+    }
+
+    // تجميع الخيارات المحددة مع الوصف المكتوب
+    let finalDescription = formData.description;
+    if (selectedTags.length > 0) {
+      const tagsString = `[Hinweise: ${selectedTags.join(', ')}]`;
+      finalDescription = finalDescription ? `${tagsString}\n${finalDescription}` : tagsString;
     }
 
     const data = new FormData();
@@ -73,7 +100,7 @@ const AddFood = () => {
     data.append('category', formData.category);
     data.append('quantity', parseInt(formData.quantity, 10) || 1);
     data.append('expiration_date', formData.expiration_date);
-    data.append('description', formData.description);
+    data.append('description', finalDescription);
     data.append('price', isPaid ? formData.price : '0');
     data.append('original_price', isPaid ? formData.original_price : '0');
 
@@ -132,6 +159,28 @@ const AddFood = () => {
                     <option value="Gekochte Speisen">🍲 Gekochte Speisen</option>
                     <option value="Sonstiges">📦 Sonstiges</option>
                   </select>
+                </div>
+
+                {/* قسم مسببات الحساسية والخصائص الغذائية */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Allergene & Eigenschaften (Optional)</label>
+                  <div className="d-flex flex-wrap gap-2">
+                    {availableTags.map((tag) => {
+                      const isSelected = selectedTags.includes(tag.label);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          className={`btn btn-sm rounded-pill fw-semibold ${
+                            isSelected ? 'btn-success text-white' : 'btn-outline-secondary bg-white'
+                          }`}
+                          onClick={() => toggleTag(tag.label)}
+                        >
+                          {isSelected ? '✓ ' : '+ '}{tag.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* خيار تحديد نوع العرض */}
@@ -240,7 +289,7 @@ const AddFood = () => {
                   />
                 </div>
 
-                {/* حقل تاريخ الانتهاء المحدث بالحد الأدنى اللحظي */}
+                {/* حقل تاريخ الانتهاء */}
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Ablaufdatum / Abholfrist</label>
                   <input

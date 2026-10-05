@@ -47,6 +47,18 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
     ? parseInt(item.available_quantity, 10) 
     : (parseInt(String(item.quantity).replace(/\D/g, ''), 10) || 0);
 
+  // استخراج شارات الخصائص والملاحظات إن وجدت في الوصف
+  let displayDescription = item.description || 'Keine weitere Beschreibung vorhanden.';
+  let tagsList = [];
+
+  if (item.description && item.description.includes('[Hinweise:')) {
+    const match = item.description.match(/\[Hinweise:\s*([^\]]+)\]/);
+    if (match && match[1]) {
+      tagsList = match[1].split(',').map((t) => t.trim());
+    }
+    displayDescription = item.description.replace(/\[Hinweise:\s*[^\]]+\]/, '').trim();
+  }
+
   const handleReserve = async () => {
     if (!user) {
       alert('Bitte melden Sie sich an, um zu reservieren.');
@@ -140,8 +152,20 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
             <h5 className="card-title fw-bold text-dark mb-1 text-truncate" title={item.title}>
               {item.title}
             </h5>
+
+            {/* عرض أوسمة الميزات ومسببات الحساسية إن وجدت */}
+            {tagsList.length > 0 && (
+              <div className="d-flex flex-wrap gap-1 mb-2">
+                {tagsList.map((tag, idx) => (
+                  <span key={idx} className="badge bg-light text-dark border rounded-pill fw-normal" style={{ fontSize: '0.75rem' }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <p className="card-text text-muted mb-3 text-truncate" style={{ fontSize: '0.88rem' }}>
-              {item.description || 'Keine weitere Beschreibung vorhanden.'}
+              {displayDescription || 'Keine weitere Beschreibung vorhanden.'}
             </p>
           </div>
 
