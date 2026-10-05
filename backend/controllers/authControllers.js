@@ -38,7 +38,9 @@ const loginUser = async (req, res) => {
                 id: userData.id, 
                 name: userData.name || userData.username || 'User', 
                 email: userData.email,
-                role: userData.role || userData.user_role || 'user'
+                role: userData.role || userData.user_role || 'user',
+                welcome_coupon: userData.welcome_coupon || null,
+                is_coupon_used: userData.is_coupon_used || false
             }
         });
 
@@ -48,7 +50,7 @@ const loginUser = async (req, res) => {
     }
 };
 
-// 2. إنشاء حساب جديد
+// 2. إنشاء حساب جديد (مع إضافة الكوبون لأول مرة)
 const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
 
@@ -61,16 +63,19 @@ const registerUser = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        // توليد كود كوبون ترحيبي فريد تلقائياً (مثل WELCOME-5928)
+        const welcomeCouponCode = `WELCOME-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        // حفظ بيانات المستخدم الجديد مع الكوبون وحالة عدم الاستخدام (FALSE)
         const newUser = await pool.query(
-            `INSERT INTO users (name, email, password, role) 
-             VALUES ($1, $2, $3, $4) 
+            `INSERT INTO users (name, email, password, role, welcome_coupon, is_coupon_used) 
+             VALUES ($1, $2, $3, $4, $5, FALSE) 
              RETURNING *`,
-            [name || 'User', email, hashedPassword, role || 'user']
+            [name || 'User', email, hashedPassword, role || 'user', welcomeCouponCode]
         );
 
         const userData = newUser.rows[0];
 
-        // توحيد المدة لتصبح ساعة واحدة أيضاً
         const token = jwt.sign(
             { id: userData.id, email: userData.email, role: userData.role },
             JWT_SECRET,
@@ -84,7 +89,9 @@ const registerUser = async (req, res) => {
                 id: userData.id,
                 name: userData.name || userData.username || name,
                 email: userData.email,
-                role: userData.role || role || 'user'
+                role: userData.role || role || 'user',
+                welcome_coupon: userData.welcome_coupon,
+                is_coupon_used: false
             }
         });
 
@@ -101,7 +108,7 @@ const updateProfile = async (req, res) => {
 
     try {
         const updatedUser = await pool.query(
-            'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, role',
+            'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, role, welcome_coupon, is_coupon_used',
             [name, email, id]
         );
 

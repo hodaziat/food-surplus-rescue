@@ -11,6 +11,10 @@ const Reservations = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [latestReceipt, setLatestReceipt] = useState(null);
 
+  // حالات الكوبون والخصم
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
+  const [isCouponApplied, setIsCouponApplied] = useState(false);
+
   let user = null;
   try {
     const storedUser = localStorage.getItem('user');
@@ -107,7 +111,16 @@ const Reservations = () => {
     }
   };
 
-  const totalPrice = reservations.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+  // حساب السعر الأصلي والمجموع بعد الخصم
+  const originalTotalPrice = reservations.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+  const finalTotalPrice = Math.max(0, originalTotalPrice - appliedDiscount);
+
+  // دالة تطبيق الكوبون الترحيبي
+  const handleApplyWelcomeCoupon = () => {
+    const DISCOUNT_AMOUNT = 5.0; // قيمة الخصم (5 يورو)
+    setAppliedDiscount(DISCOUNT_AMOUNT);
+    setIsCouponApplied(true);
+  };
 
   const handleCheckout = async () => {
     setIsProcessing(true);
@@ -117,11 +130,12 @@ const Reservations = () => {
       id: firstItem ? (firstItem.reservation_id || firstItem.id) : '123',
       foodTitle: firstItem ? (firstItem.title || 'Lebensmittel-Paket') : 'Lebensmittel-Paket',
       quantity: reservations.length,
-      totalPrice: totalPrice,
+      totalPrice: finalTotalPrice,
       paymentMethod: selectedPayment
     };
 
     try {
+      // 1. معالجة الحجوزات وإتمام الشراء
       await Promise.all(
         reservations.map((item) =>
           API.put(`/reservations/checkout/${item.reservation_id || item.id}`, {
@@ -131,6 +145,24 @@ const Reservations = () => {
           }).catch((err) => console.log('Single checkout note:', err))
         )
       );
+
+      // 2. إذا تم استخدام الكوبون، نحدث حالة الكوبون إلى "مستخدم"
+      if (isCouponApplied && user?.id) {
+        try {
+          await API.put(`/auth/profile/${user.id}`, {
+            name: user.name,
+            email: user.email,
+            is_coupon_used: true
+          });
+
+          // تحديث بيانات المستخدم في LocalStorage ليتعرف النظام على أن الكوبون استُهلك
+          const updatedUser = { ...user, is_coupon_used: true };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        } catch (couponErr) {
+          console.error('Fehler beim Aktualisieren des Gutscheinstatus:', couponErr);
+        }
+      }
+
     } catch (err) {
       console.error('Checkout error:', err);
     } finally {
@@ -138,6 +170,8 @@ const Reservations = () => {
       setShowCheckoutModal(false);
       setReservations([]);
       setIsProcessing(false);
+      setAppliedDiscount(0);
+      setIsCouponApplied(false);
       
       // تحديث شريط الملاحة وحذف العناصر من السلة مباشرة
       window.dispatchEvent(new Event('updateCart'));
@@ -153,6 +187,9 @@ const Reservations = () => {
       </div>
     );
   }
+
+  // تحقق مما إذا كان الكوبون الترحيبي متاحاً وغير مستخدم بعد
+  const hasWelcomeCoupon = user && user.welcome_coupon && !user.is_coupon_used;
 
   return (
     <div className="container py-5">
@@ -234,6 +271,30 @@ const Reservations = () => {
           </div>
 
           <div className="col-lg-4">
+            {/* بطاقة عرض وتطبيق الكوبون للزبون الجديد فقط */}
+            {hasWelcomeCoupon && (
+              <div className="card border-0 shadow-sm rounded-4 p-3 mb-3 bg-success bg-opacity-10 border-success">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="fw-bold text-success small">🎁 Willkommens-Gutschein!</span>
+                  <span className="badge bg-success">{user.welcome_coupon}</span>
+                </div>
+                <p className="text-muted small mb-2">Erhalten Sie 5,00 € Rabatt auf Ihre erste Bestellung.</p>
+                {!isCouponApplied ? (
+                  <button 
+                    type="button" 
+                    className="btn btn-sm btn-success w-100 fw-bold rounded-3"
+                    onClick={handleApplyWelcomeCoupon}
+                  >
+                    Gutschein anwenden (-5,00 €)
+                  </button>
+                ) : (
+                  <div className="alert alert-success py-1 px-2 mb-0 small text-center fw-bold">
+                    ✓ Gutschein angewendet!
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="card border-0 shadow-sm rounded-4 p-4">
               <h5 className="fw-bold text-dark mb-3">Zusammenfassung</h5>
               <div className="d-flex justify-content-between mb-2">
@@ -244,9 +305,17 @@ const Reservations = () => {
                 <span className="text-muted">Gesamtstückzahl:</span>
                 <span className="fw-semibold">{reservations.length} Stk.</span>
               </div>
+              
+              {isCouponApplied && (
+                <div className="d-flex justify-content-between mb-2 text-success fw-bold">
+                  <span>Willkommens-Rabatt:</span>
+                  <span>- {appliedDiscount.toFixed(2)} €</span>
+                </div>
+              )}
+
               <div className="d-flex justify-content-between mb-3 fs-5 fw-bold">
                 <span>Gesamtsumme:</span>
-                <span className="text-success">{totalPrice === 0 ? 'Kostenlos' : `${totalPrice.toFixed(2)} €`}</span>
+                <span className="text-success">{finalTotalPrice === 0 ? 'Kostenlos' : `${finalTotalPrice.toFixed(2)} €`}</span>
               </div>
               <hr className="my-3 opacity-10" />
               <button type="button" className="btn btn-success w-100 fw-bold py-3 rounded-3 shadow-sm" onClick={() => setShowCheckoutModal(true)}>
@@ -263,7 +332,7 @@ const Reservations = () => {
         onConfirm={handleCheckout}
         selectedPayment={selectedPayment}
         setSelectedPayment={setSelectedPayment}
-        totalPrice={totalPrice}
+        totalPrice={finalTotalPrice}
         isProcessing={isProcessing}
       />
     </div>
