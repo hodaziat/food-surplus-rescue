@@ -12,7 +12,6 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
 
   const donorId = item.donor_id || item.user_id;
 
-  // جلب متوسط تقييم المطعم/المتبرع للكرت
   useEffect(() => {
     let isMounted = true;
     if (donorId) {
@@ -35,7 +34,6 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
     ? `http://localhost:5000${item.image_url}` 
     : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80';
 
-  // تحويل وتحليل أرقام الهوية والمطابقة الدقيقة
   const isOwner = user && (
     Number(user.id) === Number(item.donor_id) || 
     Number(user.id) === Number(item.user_id) ||
@@ -45,10 +43,10 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
 
   const isAdmin = user && user.role === 'admin';
 
-  // استخراج القيمة الرقمية للكمية المتاحة
-  const availableQty = parseInt(String(item.quantity).replace(/\D/g, ''), 10) || 0;
+  const availableQty = item.available_quantity !== undefined 
+    ? parseInt(item.available_quantity, 10) 
+    : (parseInt(String(item.quantity).replace(/\D/g, ''), 10) || 0);
 
-  // إضافة الوجبة للسلة بشكل مباشر عند الحجز
   const handleReserve = async () => {
     if (!user) {
       alert('Bitte melden Sie sich an, um zu reservieren.');
@@ -65,15 +63,14 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
     try {
       await API.post('/reservations/add', {
         food_id: item.id,
-        receiver_id: user.id,
-        requested_quantity: 1
+        receiver_id: user.id
       });
 
       alert('In den Warenkorb gelegt! 🛒');
       window.dispatchEvent(new Event('updateCart'));
 
       if (onReserveSuccess) {
-        onReserveSuccess();
+        await onReserveSuccess();
       }
     } catch (err) {
       console.error('Reservation Failed:', err);
@@ -94,7 +91,6 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
     <div className="col-12 col-md-6 col-lg-4 mb-4">
       <div className="card h-100 border-0 shadow-sm rounded-4 hover-shadow transition-all overflow-hidden">
         
-        {/* قسم الصورة */}
         <div style={{ height: '170px', overflow: 'hidden', position: 'relative' }}>
           <img 
             src={imageUrl} 
@@ -109,7 +105,6 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
             📦 {availableQty > 0 ? `${availableQty} Portionen` : 'Ausverkauft'}
           </span>
 
-          {/* عرض السعر للمشتري فقط */}
           {!isOwner && (
             <span className="badge bg-dark position-absolute bottom-0 start-0 m-3 rounded-pill px-3 py-2 shadow-sm fs-6">
               {price === 0 ? (
@@ -157,7 +152,6 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
                 👤 <span className="text-dark">{item.donor_name || item.spender || 'Anonym'}</span>
               </small>
 
-              {/* عرض نجوم تقييم المطعم باختصار */}
               <div className="d-flex align-items-center gap-1">
                 <span className="text-warning fw-bold small">
                   {donorRating && Number(donorRating) > 0 ? (
@@ -171,11 +165,9 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
               </div>
             </div>
 
-            {/* الأزرار بعد ضبط صلاحيات الأدمن والصاحب */}
             <div className="d-flex gap-2">
               {isOwner || isAdmin ? (
                 <>
-                  {/* زر التعديل يظهر فقط لصاحب العرض الأصلي */}
                   {isOwner && (
                     <button 
                       onClick={() => navigate(`/edit-food/${item.id}`)}
@@ -185,7 +177,6 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
                     </button>
                   )}
 
-                  {/* زر الحذف يظهر لصاحب العرض وللأدمن أيضاً */}
                   <button 
                     onClick={() => handleDelete(item.id)}
                     className="btn btn-outline-danger fw-bold py-2 rounded-3 flex-fill"

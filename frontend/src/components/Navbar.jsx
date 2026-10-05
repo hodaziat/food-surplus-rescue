@@ -5,7 +5,7 @@ import API from '../services/api';
 const Navbar = () => {
   const [reservationCount, setReservationCount] = useState(0);
 
-  // دالة جلب عدد الحجوزات
+  // دالة جلب عدد عناصر السلة (الطلبات غير المدفوعة/المعلقة فقط)
   const fetchReservationCount = useCallback(async () => {
     const storedUser = localStorage.getItem('user');
     const user = storedUser ? JSON.parse(storedUser) : null;
@@ -18,7 +18,11 @@ const Navbar = () => {
     try {
       const res = await API.get(`/reservations/user/${user.id}`);
       if (Array.isArray(res.data)) {
-        setReservationCount(res.data.length);
+        // تصفية العناصر لحساب السلة فقط (status === 'pending') واستثناء المشتريات التأكيدية
+        const pendingCartItems = res.data.filter(
+          (item) => item.status === 'pending' || !item.status
+        );
+        setReservationCount(pendingCartItems.length);
       }
     } catch (err) {
       console.error('Fehler beim Laden der Reservierungsanzahl:', err);

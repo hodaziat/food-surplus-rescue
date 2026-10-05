@@ -2,21 +2,17 @@ const pool = require('../config/db');
 const path = require('path');
 const fs = require('fs');
 
-// 1. إضافة إعلان طعام جديد مع حفظ الفئة ومسار الصورة والأسعار
+// 1. إنشاء إعلان طعام جديد
 const createFoodListing = async (req, res) => {
     const { donor_id, user_id, title, category, description, quantity, expiration_date, price, original_price } = req.body;
 
-    // اعتماد donor_id أو user_id تلقائياً
     const finalDonorId = donor_id || user_id;
 
     if (!finalDonorId) {
         return res.status(400).json({ message: 'Donor ID is required' });
     }
 
-    // تحويل الكمية إلى رقم آمن وصافٍ
     const parsedQuantity = parseInt(String(quantity).replace(/\D/g, ''), 10) || 1;
-
-    // أخذ مسار الصورة المرفوعة في حال وجودها
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     try {
@@ -48,12 +44,16 @@ const createFoodListing = async (req, res) => {
     }
 };
 
-// 2. جلب جميع الإعلانات المتاحة وحذف المنتهية الصلاحية أوتوماتيكياً
+// 2. جلب جميع الإعلانات وحساب الكمية المتاحة الدقيقة
 const getAllFoodListings = async (req, res) => {
     try {
-        // أ. العثور على جميع الوجبات التي تجاوز وقت انتهائها الوقت الحالي لحذف صورها ملفياً
+        // أ. تنظيف الوجبات المنتهية الصلاحية التي لم تُشترَ
         const expiredItems = await pool.query(
-            `SELECT id, image_url FROM food_listings WHERE expiration_date < NOW()`
+            `SELECT id, image_url FROM food_listings 
+             WHERE expiration_date < NOW() 
+               AND id NOT IN (
+                   SELECT DISTINCT food_id FROM reservations WHERE status = 'confirmed'
+               )`
         );
 
         if (expiredItems.rows.length > 0) {
@@ -68,33 +68,43 @@ const getAllFoodListings = async (req, res) => {
 
             const expiredIds = expiredItems.rows.map(item => item.id);
 
-            // حذف الحجوزات المرتبطة بالوجبات المنتهية
             await pool.query(
-                `DELETE FROM reservations WHERE food_id = ANY($1::int[])`,
+                `DELETE FROM reservations WHERE food_id = ANY($1::int[]) AND (status = 'pending' OR status IS NULL)`,
                 [expiredIds]
             );
 
-            // حذف الوجبات المنتهية نهائياً من قاعدة البيانات
             await pool.query(
                 `DELETE FROM food_listings WHERE id = ANY($1::int[])`,
                 [expiredIds]
             );
         }
 
-        // ب. جلب الوجبات الصالحة فقط والمتوفرة
+        // ب. جلب الوجبات الصالحة وحساب الحجوزات المعلقة بالسلات
         const listings = await pool.query(
-            `SELECT food_listings.*, users.name AS donor_name, users.email AS donor_email 
+            `SELECT food_listings.*, 
+                    users.name AS donor_name, 
+                    users.email AS donor_email,
+                    COALESCE((
+                        SELECT COUNT(*) 
+                        FROM reservations 
+                        WHERE reservations.food_id = food_listings.id 
+                          AND (reservations.status = 'pending' OR reservations.status IS NULL)
+                    ), 0) AS pending_reservations
              FROM food_listings 
              JOIN users ON food_listings.donor_id = users.id 
-             WHERE status = 'available' 
-               AND expiration_date >= NOW() 
-             ORDER BY created_at DESC`
+             WHERE food_listings.expiration_date >= NOW() 
+             ORDER BY food_listings.created_at DESC`
         );
 
-        // تصفية الوجبات التي تحتوي على كمية أكبر من 0
-        const availableListings = listings.rows.filter(item => {
-            const qty = parseInt(String(item.quantity).replace(/\D/g, ''), 10);
-            return !isNaN(qty) ? qty > 0 : true;
+        const availableListings = listings.rows.map(item => {
+            const totalQty = parseInt(String(item.quantity).replace(/\D/g, ''), 10) || 0;
+            const pendingQty = parseInt(item.pending_reservations, 10) || 0;
+            const availableQty = Math.max(0, totalQty - pendingQty);
+
+            return {
+                ...item,
+                available_quantity: availableQty
+            };
         });
 
         res.status(200).json(availableListings);
@@ -104,7 +114,7 @@ const getAllFoodListings = async (req, res) => {
     }
 };
 
-// 3. تحديث إعلان طعام موجود
+// 3. تحديث إعلان طعام
 const updateFoodListing = async (req, res) => {
     const { id } = req.params;
     const { title, category, description, quantity, expiration_date, price, original_price } = req.body;
@@ -159,7 +169,7 @@ const updateFoodListing = async (req, res) => {
     }
 };
 
-// 4. حذف إعلان طعام مع حذف الحجوزات المرتبطة والصورة من الخادم
+// 4. حذف إعلان طعام
 const deleteFoodListing = async (req, res) => {
     const { id } = req.params;
 
@@ -177,7 +187,6 @@ const deleteFoodListing = async (req, res) => {
             }
         }
 
-        // حذف الحجوزات المرتبطة أولاً تجنباً لمشاكل Foreign Key
         await pool.query('DELETE FROM reservations WHERE food_id = $1', [id]);
 
         const deleteListing = await pool.query(

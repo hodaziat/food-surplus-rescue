@@ -16,6 +16,5 @@ router.get('/user/:userId', getUserReservations);
 router.get('/donor-orders/:donorId', getDonorOrders);
 router.put('/checkout/:id', checkoutReservation);
 router.delete('/:id', deleteReservation);
-router.delete('/delete/:id', deleteReservation);
 
 module.exports = router;

@@ -66,12 +66,10 @@ const Home = () => {
   return (
     <div style={{ backgroundColor: isDark ? '#121212' : '#f4f6f8', minHeight: '100vh', paddingBottom: '60px' }}>
       
-      {/* 1. قسم الترحيب */}
       <HeroBanner currentUser={currentUser} />
 
       <div className="container" id="listings-section">
         
-        {/* الصف الأول: الخريطة + صندوق الإحصائيات والروابط */}
         <div className="row g-4 mb-4">
           <div className="col-lg-8">
             <FoodMap foodListings={filteredListings} />
@@ -112,7 +110,6 @@ const Home = () => {
                     👤 Mein Profil
                   </Link>
 
-                  {/* عرض الروابط حسب دور المستخدم */}
                   {isAdmin ? (
                     <Link to="/admin-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                       🛡️ Bewertungen verwalten
@@ -144,7 +141,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* الصف الثاني: شريط البحث والفلاتر */}
         <div className="row mb-4">
           <div className="col-12">
             <FoodFilter 
@@ -156,7 +152,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* الصف الثالث: الوجبات */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4 className={`fw-bold m-0 ${isDark ? 'text-white' : 'text-dark'}`}>📍 Verfügbare Lebensmittel</h4>
           <span className="badge bg-success fs-6 px-3 py-2 rounded-pill">
@@ -198,7 +193,6 @@ const Home = () => {
           </div>
         )}
 
-        {/* الصف الرابع: تقييمات الموقع */}
         <div className="mt-5">
           <SiteReviews />
         </div>
