@@ -24,35 +24,39 @@ import DonorReviewsPage from './pages/DonorReviewsPage';
 import AdminReviewsPage from './pages/AdminReviewsPage'; 
 import DonorOrdersPage from './pages/DonorOrdersPage';
 
-// مكون حماية المسارات (ProtectedRoute)
+// ثابث مدة الصلاحية: ساعة واحدة بالملي ثانية (60 دقيقة × 60 ثانية × 1000)
+const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
+
+// مكون حماية المسارات (ProtectedRoute) مع فحص انتهاء الساعة
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
-  if (!token) {
+  const loginTime = localStorage.getItem('loginTime');
+
+  if (!token || !loginTime) {
     return <Navigate to="/login" replace />;
   }
+
+  // إذا مرت أكثر من ساعة، نرفع بيانات الجلسة ونحوله لصفحة Login
+  if (Date.now() - parseInt(loginTime, 10) > ONE_HOUR_MS) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user');
+    localStorage.removeItem('loginTime');
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 };
 
 function App() {
   const [user, setUser] = useState(null);
 
-  // جلب اسم المستخدم عند التحميل بأمان
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('username');
-      if (storedUser) {
-        setUser(storedUser);
-      }
-    } catch (err) {
-      console.error('Error reading username:', err);
-    }
-  }, []);
-
   // دالة تسجيل الخروج
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('user');
+    localStorage.removeItem('loginTime');
     setUser(null);
   };
 
@@ -60,6 +64,28 @@ function App() {
   const handleLogin = (username) => {
     setUser(username);
   };
+
+  // فحص تلقائي للجلسة عند التحميل ومع كل دقيقة أثناء استخدام الموقع
+  useEffect(() => {
+    const checkAuthTimeout = () => {
+      const loginTime = localStorage.getItem('loginTime');
+      const token = localStorage.getItem('token');
+
+      if (token && loginTime) {
+        if (Date.now() - parseInt(loginTime, 10) > ONE_HOUR_MS) {
+          handleLogout();
+        } else {
+          const storedUser = localStorage.getItem('username');
+          if (storedUser) setUser(storedUser);
+        }
+      }
+    };
+
+    checkAuthTimeout();
+    const interval = setInterval(checkAuthTimeout, 60000); // يفحص تلقائياً كل دقيقة
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Router>

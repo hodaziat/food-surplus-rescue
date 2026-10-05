@@ -2,7 +2,6 @@ const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// مفتاح سري لتوليد التوكن (يفضل أن يكون في ملف .env، سنضعه هنا لضمان عمله مباشرة)
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_123';
 
 // 1. تسجيل الدخول
@@ -19,20 +18,19 @@ const loginUser = async (req, res) => {
         const userData = userResult.rows[0];
         const storedPassword = userData.password || userData.passwort;
 
-        // مقارنة كلمة المرور المدخلة مع كلمة المرور المشفرة في قاعدة البيانات
         const isMatch = await bcrypt.compare(password, storedPassword);
 
         if (!isMatch) {
             return res.status(400).json({ message: 'E-Mail oder Passwort falsch.' });
         }
 
-        // توليد توكن JWT حقيقي
-        // تعديل مدة الصلاحية لتصبح ساعة واحدة مثلاً
-const token = jwt.sign(
-    { id: userData.id, email: userData.email, role: userData.role },
-    JWT_SECRET,
-    { expiresIn: '1h' } 
-);
+        // توليد توكن لمدة ساعة واحدة فقط
+        const token = jwt.sign(
+            { id: userData.id, email: userData.email, role: userData.role },
+            JWT_SECRET,
+            { expiresIn: '1h' } 
+        );
+
         res.status(200).json({
             message: 'Login erfolgreich',
             token,
@@ -55,17 +53,14 @@ const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     try {
-        // التحقق من وجود الإيميل
         const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (userCheck.rows.length > 0) {
             return res.status(400).json({ message: 'E-Mail bereits registriert.' });
         }
 
-        // تشفير كلمة المرور قبل حفظها
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // إدراج الحساب الجديد في قاعدة البيانات مع كلمة المرور المشفرة
         const newUser = await pool.query(
             `INSERT INTO users (name, email, password, role) 
              VALUES ($1, $2, $3, $4) 
@@ -75,11 +70,11 @@ const registerUser = async (req, res) => {
 
         const userData = newUser.rows[0];
 
-        // توليد توكن JWT للمستخدم الجديد
+        // توحيد المدة لتصبح ساعة واحدة أيضاً
         const token = jwt.sign(
             { id: userData.id, email: userData.email, role: userData.role },
             JWT_SECRET,
-            { expiresIn: '12h' } 
+            { expiresIn: '1h' } 
         );
 
         res.status(201).json({
@@ -124,7 +119,7 @@ const updateProfile = async (req, res) => {
     }
 };
 
-// 4. تغيير كلمة المرور للمستخدم
+// 4. تغيير كلمة المرور
 const changePassword = async (req, res) => {
     const { id } = req.params;
     const { currentPassword, newPassword } = req.body;
@@ -138,13 +133,11 @@ const changePassword = async (req, res) => {
 
         const storedPassword = userResult.rows[0].password;
 
-        // التحقق من صحة كلمة المرور الحالية
         const isMatch = await bcrypt.compare(currentPassword, storedPassword);
         if (!isMatch) {
             return res.status(400).json({ message: 'Das aktuelle Passwort ist falsch.' });
         }
 
-        // تشفير كلمة المرور الجديدة
         const salt = await bcrypt.genSalt(10);
         const hashedNewPassword = await bcrypt.hash(newPassword, salt);
 

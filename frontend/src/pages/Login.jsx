@@ -21,6 +21,9 @@ const Login = ({ onLogin }) => {
       localStorage.setItem('username', userName);
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
+      // 👈 تسجيل وقت الدخول بالملي ثانية لحساب الانتهاء تلقائياً
+      localStorage.setItem('loginTime', Date.now().toString());
+
       if (onLogin) {
         onLogin(userName);
       }
