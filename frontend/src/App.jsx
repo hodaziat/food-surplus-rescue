@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // المكونات الأساسية (Components)
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ChatWidget from './components/ChatWidget'; // استدعاء مكون الشات
 
 // الصفحات (Pages)
 import Home from './pages/Home';
@@ -90,7 +91,7 @@ function App() {
 
   return (
     <Router>
-      <div className="d-flex flex-column min-vh-100">
+      <div className="d-flex flex-column min-vh-100 position-relative">
         <Navbar user={user} onLogout={handleLogout} />
         
         <div className="flex-grow-1">
@@ -182,6 +183,9 @@ function App() {
             />
           </Routes>
         </div>
+
+        {/* المساعد التفاعلي (الشات) في الزاوية */}
+        <ChatWidget />
 
         <Footer />
       </div>
