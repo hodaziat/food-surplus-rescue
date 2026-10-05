@@ -13,13 +13,18 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Alle');
 
-  const storedUser = localStorage.getItem('user');
-  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  let currentUser = null;
+  try {
+    const storedUser = localStorage.getItem('user');
+    currentUser = storedUser ? JSON.parse(storedUser) : null;
+  } catch (parseErr) {
+    console.error('Error parsing stored user:', parseErr);
+  }
 
   const fetchListings = async () => {
     try {
       const res = await API.get('/food');
-      setListings(res.data);
+      setListings(res.data || []);
     } catch (err) {
       console.error('Fehler beim Laden der Angebote:', err);
     } finally {
@@ -35,7 +40,7 @@ const Home = () => {
     if (window.confirm('Möchten Sie dieses Angebot wirklich löschen?')) {
       try {
         await API.delete(`/food/${id}`);
-        setListings(listings.filter((item) => item.id !== id));
+        setListings((prev) => prev.filter((item) => String(item.id) !== String(id)));
       } catch (err) {
         console.error('Fehler beim Löschen:', err);
         alert('Fehler beim Löschen des Angebots.');
@@ -107,15 +112,20 @@ const Home = () => {
                     👤 Mein Profil
                   </Link>
 
-                  {/* إزالة خطر حجوزاتي واستبدالها بلوحة تحكم الأدمن أو تقييمات المتبرع حسب دور المستخدم */}
+                  {/* عرض الروابط حسب دور المستخدم */}
                   {isAdmin ? (
                     <Link to="/admin-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                       🛡️ Bewertungen verwalten
                     </Link>
                   ) : isDonor ? (
-                    <Link to="/donor-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
-                      ⭐ Meine Bewertungen
-                    </Link>
+                    <>
+                      <Link to="/donor-orders" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
+                        📋 Eingegangene Bestellungen
+                      </Link>
+                      <Link to="/donor-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
+                        ⭐ Meine Bewertungen
+                      </Link>
+                    </>
                   ) : (
                     <Link to="/reservations" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
                       📜 Meine Reservierungen
@@ -166,7 +176,7 @@ const Home = () => {
             <div className="fs-1 mb-3">🔍</div>
             <h5 className={`fw-bold ${isDark ? 'text-white' : 'text-secondary'}`}>Keine passenden Angebote gefunden.</h5>
             <p className={isDark ? 'text-light' : 'text-muted'}>Versuchen Sie einen anderen Suchbegriff oder eine andere Kategorie.</p>
-            {currentUser && currentUser.role === 'donor' && (
+            {currentUser && (currentUser.role === 'donor' || currentUser.user_role === 'donor') && (
               <div>
                 <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
                   Lebensmittel anbieten

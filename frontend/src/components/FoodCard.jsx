@@ -8,33 +8,45 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
   const navigate = useNavigate();
 
   const [donorRating, setDonorRating] = useState(null);
+  const [isReserving, setIsReserving] = useState(false);
 
   const donorId = item.donor_id || item.user_id;
 
   // جلب متوسط تقييم المطعم/المتبرع للكرت
   useEffect(() => {
+    let isMounted = true;
     if (donorId) {
       API.get(`/donor-reviews/${donorId}`)
         .then((res) => {
-          setDonorRating(res.data.average_rating || null);
+          if (isMounted) {
+            setDonorRating(res.data.average_rating || null);
+          }
         })
         .catch((err) => {
           console.error('Fehler beim Laden der Partner-Bewertung:', err);
         });
     }
+    return () => {
+      isMounted = false;
+    };
   }, [donorId]);
 
   const imageUrl = item.image_url 
     ? `http://localhost:5000${item.image_url}` 
     : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80';
 
+  // تحويل وتحليل أرقام الهوية والمطابقة الدقيقة
   const isOwner = user && (
-    user.id === item.donor_id || 
+    Number(user.id) === Number(item.donor_id) || 
+    Number(user.id) === Number(item.user_id) ||
     user.name === item.donor_name || 
     user.name === item.spender
   );
 
   const isAdmin = user && user.role === 'admin';
+
+  // استخراج القيمة الرقمية للكمية المتاحة
+  const availableQty = parseInt(String(item.quantity).replace(/\D/g, ''), 10) || 0;
 
   // إضافة الوجبة للسلة بشكل مباشر عند الحجز
   const handleReserve = async () => {
@@ -43,10 +55,18 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
       return;
     }
 
+    if (availableQty <= 0) {
+      alert('Leider ist dieses Angebot ausverkauft!');
+      return;
+    }
+
+    setIsReserving(true);
+
     try {
       await API.post('/reservations/add', {
         food_id: item.id,
-        receiver_id: user.id
+        receiver_id: user.id,
+        requested_quantity: 1
       });
 
       alert('In den Warenkorb gelegt! 🛒');
@@ -56,8 +76,10 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
         onReserveSuccess();
       }
     } catch (err) {
-      console.error(err);
+      console.error('Reservation Failed:', err);
       alert(err.response?.data?.message || 'Fehler bei der Reservierung.');
+    } finally {
+      setIsReserving(false);
     }
   };
 
@@ -83,8 +105,8 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
               e.target.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80';
             }}
           />
-          <span className="badge bg-success position-absolute top-0 end-0 m-3 rounded-pill px-3 py-2 shadow-sm">
-            📦 {item.quantity} Portionen
+          <span className={`badge ${availableQty > 0 ? 'bg-success' : 'bg-danger'} position-absolute top-0 end-0 m-3 rounded-pill px-3 py-2 shadow-sm`}>
+            📦 {availableQty > 0 ? `${availableQty} Portionen` : 'Ausverkauft'}
           </span>
 
           {/* عرض السعر للمشتري فقط */}
@@ -182,9 +204,10 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
 
                   <button 
                     onClick={handleReserve} 
+                    disabled={isReserving || availableQty <= 0}
                     className="btn btn-success fw-bold py-2 rounded-3 flex-fill"
                   >
-                    Reservieren
+                    {isReserving ? '...' : availableQty <= 0 ? 'Ausverkauft' : 'Reservieren'}
                   </button>
                 </>
               )}

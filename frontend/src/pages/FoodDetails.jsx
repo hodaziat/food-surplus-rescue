@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import FoodMap from '../components/FoodMap';
 import DonorReviews from '../components/DonorReviews';
@@ -10,13 +10,21 @@ function FoodDetails() {
   
   const [food, setFood] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isReserving, setIsReserving] = useState(false);
 
-  useEffect(() => {
-    // جلب بيانات الوجبة مباشرة بالـ ID
+  let user = null;
+  try {
+    const storedUser = localStorage.getItem('user');
+    user = storedUser ? JSON.parse(storedUser) : null;
+  } catch (parseErr) {
+    console.error('Error parsing stored user:', parseErr);
+  }
+
+  // جلب بيانات الوجبة بالـ ID
+  const fetchFoodDetails = useCallback(() => {
     api.get(`/food/${id}`)
       .then((res) => {
         setFood(res.data || null);
-        setLoading(false);
       })
       .catch(() => {
         // Fallback في حال جلب القائمة كاملة
@@ -27,10 +35,67 @@ function FoodDetails() {
           })
           .catch((err) => {
             console.error('Error fetching food details:', err);
-          })
-          .finally(() => setLoading(false));
-      });
+          });
+      })
+      .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    fetchFoodDetails();
+  }, [fetchFoodDetails]);
+
+  // تحويل استخراج الكمية المتاحة إلى رقم نقي بأسلوب آمن
+  const parseQuantity = (qty) => {
+    if (typeof qty === 'number') return qty;
+    if (!qty) return 0;
+    const parsed = parseInt(String(qty).replace(/\D/g, ''), 10);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const availableQty = food ? parseQuantity(food.quantity) : 0;
+
+  // تنفيذ الحجز المباشر وتحديث البيانات
+  const handleReserve = async () => {
+    if (!user) {
+      alert('Bitte melden Sie sich an, um zu reservieren.');
+      navigate('/login');
+      return;
+    }
+
+    if (availableQty <= 0) {
+      alert('Leider ist dieses Angebot ausverkauft!');
+      return;
+    }
+
+    setIsReserving(true);
+
+    try {
+      await api.post('/reservations/add', {
+        food_id: food.id,
+        receiver_id: user.id,
+        requested_quantity: 1
+      });
+
+      alert('Erfolgreich reserviert und dem Warenkorb hinzugefügt! 🛒');
+      
+      // إطلاق حدث تحديث السلة في الترويسة Navbar
+      window.dispatchEvent(new Event('updateCart'));
+
+      // 1. تحديث متزامن للكمية محلياً فوراً
+      setFood((prevFood) => ({
+        ...prevFood,
+        quantity: Math.max(0, availableQty - 1)
+      }));
+
+      // 2. إعادة جلب البيانات لتضمين أحدث التغيرات من السيرفر
+      fetchFoodDetails();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Fehler bei der Reservierung.');
+    } finally {
+      setIsReserving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -62,6 +127,13 @@ function FoodDetails() {
   const donorId = food.donor_id || food.user_id;
   const donorName = food.donor_name || food.spender || 'Anonym';
 
+  const isOwner = user && (
+    Number(user.id) === Number(food.donor_id) || 
+    Number(user.id) === Number(food.user_id) ||
+    user.name === food.donor_name || 
+    user.name === food.spender
+  );
+
   return (
     <div className="container my-4">
       <button className="btn btn-outline-secondary mb-3 rounded-3" onClick={() => navigate(-1)}>
@@ -87,8 +159,8 @@ function FoodDetails() {
             <div className="card-body p-4">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="fw-bold text-dark mb-0">{food.title}</h2>
-                <span className="badge bg-success fs-6 px-3 py-2 rounded-pill">
-                  📦 Menge: {food.quantity}
+                <span className={`badge ${availableQty > 0 ? 'bg-success' : 'bg-danger'} fs-6 px-3 py-2 rounded-pill`}>
+                  📦 Menge: {availableQty > 0 ? `${availableQty} Portionen` : 'Ausverkauft'}
                 </span>
               </div>
 
@@ -114,12 +186,20 @@ function FoodDetails() {
               <h5 className="fw-bold mb-2">Abholort:</h5>
               <p className="text-secondary">📍 {food.location || 'Erlangen Stadtmitte'}</p>
 
-              <button 
-                className="btn btn-success btn-lg w-100 mt-3 fw-bold py-2 rounded-3"
-                onClick={() => navigate('/')}
-              >
-                Jetzt Reservieren (auf Startseite)
-              </button>
+              {/* زر الحجز المباشر المحدث */}
+              {!isOwner ? (
+                <button 
+                  className="btn btn-success btn-lg w-100 mt-3 fw-bold py-2 rounded-3"
+                  onClick={handleReserve}
+                  disabled={isReserving || availableQty <= 0}
+                >
+                  {isReserving ? 'Wird reserviert...' : availableQty <= 0 ? 'Ausverkauft' : 'Jetzt Reservieren 🛒'}
+                </button>
+              ) : (
+                <div className="alert alert-info text-center mt-3 rounded-3 mb-0">
+                  Dies ist Ihr eigenes Angebot.
+                </div>
+              )}
             </div>
           </div>
 

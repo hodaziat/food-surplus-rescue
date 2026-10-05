@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/api';
 import { downloadReservationPDF } from '../utils/pdfGenerator';
-import CheckoutModal from '../components/CheckoutModal'; // استيراد نافذة الدفع المستقلة
+import CheckoutModal from '../components/CheckoutModal';
 
 const Reservations = () => {
   const [reservations, setReservations] = useState([]);
@@ -11,10 +11,15 @@ const Reservations = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [latestReceipt, setLatestReceipt] = useState(null);
 
-  const storedUser = localStorage.getItem('user');
-  const user = storedUser ? JSON.parse(storedUser) : null;
+  let user = null;
+  try {
+    const storedUser = localStorage.getItem('user');
+    user = storedUser ? JSON.parse(storedUser) : null;
+  } catch (parseErr) {
+    console.error('Error parsing stored user:', parseErr);
+  }
 
-  const fetchReservations = async () => {
+  const fetchReservations = useCallback(async () => {
     if (!user || !user.id) {
       setLoading(false);
       return;
@@ -22,18 +27,17 @@ const Reservations = () => {
 
     try {
       const res = await API.get(`/reservations/user/${user.id}`);
-      setReservations(res.data);
+      setReservations(res.data || []);
     } catch (err) {
       console.error('Fehler beim Laden der Reservierungen:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     fetchReservations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchReservations]);
 
   const groupedReservations = Object.values(
     reservations.reduce((acc, item) => {
@@ -56,7 +60,7 @@ const Reservations = () => {
     try {
       const foodRes = await API.get('/food');
       const currentFood = foodRes.data.find((f) => String(f.id) === String(item.food_id));
-      const availableQty = currentFood ? parseInt(currentFood.quantity) : 0;
+      const availableQty = currentFood ? parseInt(String(currentFood.quantity).replace(/\D/g, ''), 10) : 0;
 
       if (availableQty <= 0) {
         alert('Leider sind keine weiteren Portionen dieses Angebots verfügbar.');
@@ -65,7 +69,8 @@ const Reservations = () => {
 
       await API.post('/reservations/add', {
         food_id: item.food_id,
-        receiver_id: user.id
+        receiver_id: user.id,
+        requested_quantity: 1
       });
 
       fetchReservations();
@@ -111,11 +116,12 @@ const Reservations = () => {
     const receiptData = {
       id: firstItem ? (firstItem.reservation_id || firstItem.id) : '123',
       foodTitle: firstItem ? (firstItem.title || 'Lebensmittel-Paket') : 'Lebensmittel-Paket',
-      quantity: reservations.length
+      quantity: reservations.length,
+      totalPrice: totalPrice,
+      paymentMethod: selectedPayment
     };
 
     try {
-      // تحديث حالة الحجز إلى مؤكد أو مدفوع
       await Promise.all(
         reservations.map((item) =>
           API.put(`/reservations/checkout/${item.reservation_id || item.id}`, {
@@ -125,21 +131,17 @@ const Reservations = () => {
           }).catch((err) => console.log('Single checkout note:', err))
         )
       );
-
-      // حذف العناصر من السلة لكي تختفي تماماً بعد إتمام الشراء
-      await Promise.all(
-        reservations.map((item) =>
-          API.delete(`/reservations/${item.reservation_id || item.id}`).catch((err) => console.log('Delete note:', err))
-        )
-      );
     } catch (err) {
       console.error('Checkout error:', err);
     } finally {
       setLatestReceipt(receiptData);
       setShowCheckoutModal(false);
-      setReservations([]); 
+      setReservations([]);
       setIsProcessing(false);
+      
+      // تحديث شريط الملاحة وحذف العناصر من السلة مباشرة
       window.dispatchEvent(new Event('updateCart'));
+      fetchReservations();
     }
   };
 
@@ -255,7 +257,6 @@ const Reservations = () => {
         </div>
       )}
 
-      {/* استدعاء نافذة الدفع المنفصلة */}
       <CheckoutModal 
         show={showCheckoutModal}
         onClose={() => setShowCheckoutModal(false)}

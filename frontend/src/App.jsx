@@ -21,9 +21,10 @@ import FoodDetails from './pages/FoodDetails';
 import SpecialRequest from './pages/SpecialRequest';
 import EditFood from './pages/EditFood';
 import DonorReviewsPage from './pages/DonorReviewsPage';
-import AdminReviewsPage from './pages/AdminReviewsPage'; // <-- تم إضافة الاستيراد الناقص هنا
+import AdminReviewsPage from './pages/AdminReviewsPage'; 
+import DonorOrdersPage from './pages/DonorOrdersPage';
 
-// مكون حماية المسارات (ProtectedRoute) بأسلوب بسيط
+// مكون حماية المسارات (ProtectedRoute)
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -35,15 +36,19 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   const [user, setUser] = useState(null);
 
-  // جلب اسم المستخدم عند التحميل
+  // جلب اسم المستخدم عند التحميل بأمان
   useEffect(() => {
-    const storedUser = localStorage.getItem('username');
-    if (storedUser) {
-      setUser(storedUser);
+    try {
+      const storedUser = localStorage.getItem('username');
+      if (storedUser) {
+        setUser(storedUser);
+      }
+    } catch (err) {
+      console.error('Error reading username:', err);
     }
   }, []);
 
-  // دالة تسجيل الخروج العادية المباشرة
+  // دالة تسجيل الخروج
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
@@ -73,9 +78,6 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/food/:id" element={<FoodDetails />} />
             <Route path="/special-request" element={<SpecialRequest />} />
-            <Route path="/edit-food/:id" element={<EditFood />} />
-            <Route path="/donor-reviews" element={<DonorReviewsPage />} />
-            <Route path="/admin-reviews" element={<AdminReviewsPage />} />
 
             {/* المسارات المحمية */}
             <Route 
@@ -91,6 +93,38 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AddFood />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/edit-food/:id" 
+              element={
+                <ProtectedRoute>
+                  <EditFood />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/donor-orders" 
+              element={
+                <ProtectedRoute>
+                  <DonorOrdersPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/donor-reviews" 
+              element={
+                <ProtectedRoute>
+                  <DonorReviewsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin-reviews" 
+              element={
+                <ProtectedRoute>
+                  <AdminReviewsPage />
                 </ProtectedRoute>
               } 
             />

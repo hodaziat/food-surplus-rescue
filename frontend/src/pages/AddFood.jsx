@@ -7,7 +7,7 @@ const AddFood = () => {
     title: '',
     category: 'Backwaren',
     description: '',
-    quantity: '',
+    quantity: '1',
     expiration_date: '',
     price: '0',
     original_price: '0'
@@ -35,18 +35,26 @@ const AddFood = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = JSON.parse(localStorage.getItem('user'));
     
-    if (!user) {
+    let user = null;
+    try {
+      const storedUser = localStorage.getItem('user');
+      user = storedUser ? JSON.parse(storedUser) : null;
+    } catch (parseErr) {
+      console.error('Error parsing stored user:', parseErr);
+    }
+    
+    if (!user || !user.id) {
       setError('Bitte melden Sie sich zuerst an, um ein Angebot zu erstellen.');
       return;
     }
 
     const data = new FormData();
+    data.append('user_id', user.id);
     data.append('donor_id', user.id);
     data.append('title', formData.title);
     data.append('category', formData.category);
-    data.append('quantity', formData.quantity);
+    data.append('quantity', parseInt(formData.quantity, 10) || 1);
     data.append('expiration_date', formData.expiration_date);
     data.append('description', formData.description);
     data.append('price', isPaid ? formData.price : '0');
@@ -201,12 +209,14 @@ const AddFood = () => {
                   )}
                 </div>
 
+                {/* حقل الكمية */}
                 <div className="mb-3">
-                  <label className="form-label fw-semibold">Menge</label>
+                  <label className="form-label fw-semibold">Menge (Anzahl der Portionen)</label>
                   <input
-                    type="text"
+                    type="number"
+                    min="1"
                     className="form-control py-2 rounded-3"
-                    placeholder="z.B. 3 Portionen, 2 kg"
+                    placeholder="z.B. 3"
                     required
                     value={formData.quantity}
                     onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
