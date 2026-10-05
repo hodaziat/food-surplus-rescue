@@ -9,12 +9,22 @@ const Register = () => {
     password: '',
     role: 'user'
   });
+  
+  // حالة الموافقة على سياسة الخصوصية
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // التحقق من الموافقة على سياسة الخصوصية
+    if (!agreedToPrivacy) {
+      setError('Bitte stimmen Sie der Datenschutzerklärung zu, um fortzufahren.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -82,7 +92,7 @@ const Register = () => {
                   />
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-3">
                   <label className="form-label fw-semibold small">Rolle</label>
                   <select
                     className="form-select py-2 rounded-3"
@@ -92,6 +102,21 @@ const Register = () => {
                     <option value="user">Verbraucher / Kunde (Consumer)</option>
                     <option value="donor">Spender / Restaurant (Donor)</option>
                   </select>
+                </div>
+
+                {/* خانة الموافقة على سياسة الخصوصية */}
+                <div className="form-check mb-4">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="privacyCheck"
+                    required
+                    checked={agreedToPrivacy}
+                    onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                  />
+                  <label className="form-check-label small text-muted" htmlFor="privacyCheck">
+                    Ich habe die <Link to="/datenschutz" target="_blank" className="text-success fw-bold text-decoration-none">Datenschutzerklärung</Link> gelesen und stimme ihr zu.
+                  </label>
                 </div>
 
                 <button 

@@ -23,6 +23,7 @@ import EditFood from './pages/EditFood';
 import DonorReviewsPage from './pages/DonorReviewsPage';
 import AdminReviewsPage from './pages/AdminReviewsPage'; 
 import DonorOrdersPage from './pages/DonorOrdersPage';
+import Datenschutz from './pages/Datenschutz';
 
 // ثابث مدة الصلاحية: ساعة واحدة بالملي ثانية (60 دقيقة × 60 ثانية × 1000)
 const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
@@ -104,6 +105,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/food/:id" element={<FoodDetails />} />
             <Route path="/special-request" element={<SpecialRequest />} />
+            <Route path="/datenschutz" element={<Datenschutz />} />
 
             {/* المسارات المحمية */}
             <Route 
