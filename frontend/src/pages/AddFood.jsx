@@ -18,6 +18,17 @@ const AddFood = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // حساب التاريخ والوقت الحالي بصيغة مناسبة لـ datetime-local لمنع التواريخ السابقة
+  const getCurrentDateTimeMin = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -46,6 +57,12 @@ const AddFood = () => {
     
     if (!user || !user.id) {
       setError('Bitte melden Sie sich zuerst an, um ein Angebot zu erstellen.');
+      return;
+    }
+
+    // التحقق الفعلي من أن تاريخ الانتهاء ليس سابقاً للوقت الحالي
+    if (new Date(formData.expiration_date) <= new Date()) {
+      setError('Das Ablaufdatum muss in der Zukunft liegen.');
       return;
     }
 
@@ -223,12 +240,14 @@ const AddFood = () => {
                   />
                 </div>
 
+                {/* حقل تاريخ الانتهاء المحدث بالحد الأدنى اللحظي */}
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Ablaufdatum / Abholfrist</label>
                   <input
                     type="datetime-local"
                     className="form-control py-2 rounded-3"
                     required
+                    min={getCurrentDateTimeMin()}
                     value={formData.expiration_date}
                     onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
                   />

@@ -48,15 +48,46 @@ const createFoodListing = async (req, res) => {
     }
 };
 
-// 2. جلب جميع الإعلانات المتاحة وغير المنتهية الصلاحية
+// 2. جلب جميع الإعلانات المتاحة وحذف المنتهية الصلاحية أوتوماتيكياً
 const getAllFoodListings = async (req, res) => {
     try {
+        // أ. العثور على جميع الوجبات التي تجاوز وقت انتهائها الوقت الحالي لحذف صورها ملفياً
+        const expiredItems = await pool.query(
+            `SELECT id, image_url FROM food_listings WHERE expiration_date < NOW()`
+        );
+
+        if (expiredItems.rows.length > 0) {
+            for (const item of expiredItems.rows) {
+                if (item.image_url && item.image_url.startsWith('/uploads/')) {
+                    const filePath = path.join(__dirname, '..', item.image_url);
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                    }
+                }
+            }
+
+            const expiredIds = expiredItems.rows.map(item => item.id);
+
+            // حذف الحجوزات المرتبطة بالوجبات المنتهية
+            await pool.query(
+                `DELETE FROM reservations WHERE food_id = ANY($1::int[])`,
+                [expiredIds]
+            );
+
+            // حذف الوجبات المنتهية نهائياً من قاعدة البيانات
+            await pool.query(
+                `DELETE FROM food_listings WHERE id = ANY($1::int[])`,
+                [expiredIds]
+            );
+        }
+
+        // ب. جلب الوجبات الصالحة فقط والمتوفرة
         const listings = await pool.query(
             `SELECT food_listings.*, users.name AS donor_name, users.email AS donor_email 
              FROM food_listings 
              JOIN users ON food_listings.donor_id = users.id 
              WHERE status = 'available' 
-               AND expiration_date >= CURRENT_DATE 
+               AND expiration_date >= NOW() 
              ORDER BY created_at DESC`
         );
 
