@@ -29,17 +29,59 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/site-reviews', siteReviewRoutes);
 app.use('/api/donor-reviews', donorReviewRoutes);
 
-// مسار استقبال رسائل صفحة التواصل (Kontakt)
+// إنشاء جدول الرسائل في قاعدة البيانات تلقائياً عند بدء التشغيل إن لم يكن موجوداً
+const createContactTable = async () => {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        subject VARCHAR(255) DEFAULT 'Allgemeine Anfrage',
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('📥 Contact messages table is ready.');
+  } catch (err) {
+    console.error('Error creating contact_messages table:', err);
+  }
+};
+createContactTable();
+
+// مسار استقبال وحفظ رسائل صفحة التواصل (Kontakt)
 app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
   
-  console.log('📩 Neue Kontaktanfrage erhalten:', { name, email, subject, message });
+  if (!name || !email || !message) {
+    return res.status(400).json({ message: 'Alle Pflichtfelder müssen ausgefüllt werden.' });
+  }
 
   try {
-    res.status(200).json({ message: 'Nachricht erfolgreich gesendet!' });
+    const query = `
+      INSERT INTO contact_messages (name, email, subject, message)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;
+    `;
+    const values = [name, email, subject || 'Allgemeine Anfrage', message];
+    const newMsg = await db.query(query, values);
+
+    console.log('📩 Neue Kontaktanfrage gespeichert:', newMsg.rows[0]);
+    res.status(201).json({ message: 'Nachricht erfolgreich gespeichert!' });
   } catch (err) {
     console.error('Contact Error:', err);
-    res.status(500).json({ message: 'Serverfehler beim Senden der Nachricht.' });
+    res.status(500).json({ message: 'Serverfehler beim Speichern der Nachricht.' });
+  }
+});
+
+// مسار لجلب جميع الرسائل (ليتم عرضها لاحقاً في لوحة التحكم)
+app.get('/api/contact/messages', async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error fetching messages:', err);
+    res.status(500).json({ message: 'Fehler beim Abrufen der Nachrichten.' });
   }
 });
 
