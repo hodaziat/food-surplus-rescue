@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 
 const Contact = () => {
@@ -12,6 +12,30 @@ const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // جلب اسم وبريد المستخدم المسجل دخولاً تلقائياً عند فتح الصفحة
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      const storedUsername = localStorage.getItem('username');
+
+      if (storedUser) {
+        const userObj = JSON.parse(storedUser);
+        setFormData((prev) => ({
+          ...prev,
+          name: userObj.name || storedUsername || '',
+          email: userObj.email || ''
+        }));
+      } else if (storedUsername) {
+        setFormData((prev) => ({
+          ...prev,
+          name: storedUsername
+        }));
+      }
+    } catch (e) {
+      console.error('Fehler beim Laden der Benutzerdaten:', e);
+    }
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
