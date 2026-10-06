@@ -1,8 +1,8 @@
 const pool = require('../config/db');
 
-// 1. إضافة حجز جديد بالسلة (مع التحقق الدقيق من المخزون المعلق دون الخصم المبكر)
+// 1. إضافة حجز جديد بالسلة (مع دعم التبرع الاختياري)
 const createReservation = async (req, res) => {
-    const { food_id, receiver_id } = req.body;
+    const { food_id, receiver_id, donation_amount } = req.body;
 
     if (!food_id || !receiver_id) {
         return res.status(400).json({ message: 'Food ID und Receiver ID sind erforderlich' });
@@ -34,10 +34,13 @@ const createReservation = async (req, res) => {
             return res.status(400).json({ message: 'Leider sind keine weiteren Portionen verfügbar.' });
         }
 
-        // إنشاء الحجز بحالة 'pending'
+        // تحديد قيمة التبرع (إذا وُجدت، أو 0.00 افتراضياً)
+        const finalDonation = donation_amount ? parseFloat(donation_amount) : 0.00;
+
+        // إنشاء الحجز بحالة 'pending' مع قيمة التبرع
         const newReservation = await pool.query(
-            "INSERT INTO reservations (food_id, receiver_id, status) VALUES ($1, $2, 'pending') RETURNING *",
-            [food_id, receiver_id]
+            "INSERT INTO reservations (food_id, receiver_id, status, donation_amount) VALUES ($1, $2, 'pending', $3) RETURNING *",
+            [food_id, receiver_id, finalDonation]
         );
 
         res.status(201).json({
@@ -63,6 +66,7 @@ const getUserReservations = async (req, res) => {
                 reservations.receiver_id,
                 reservations.status,
                 reservations.reserved_at,
+                reservations.donation_amount,
                 food_listings.title, 
                 food_listings.description, 
                 food_listings.quantity AS total_quantity,
@@ -93,6 +97,7 @@ const getDonorOrders = async (req, res) => {
             `SELECT 
                 reservations.id AS reservation_id,
                 reservations.reserved_at,
+                reservations.donation_amount,
                 food_listings.id AS food_id,
                 food_listings.title AS food_title,
                 food_listings.description AS food_description,
@@ -116,7 +121,7 @@ const getDonorOrders = async (req, res) => {
     }
 };
 
-// 4. إنهاء الشراء وتأكيد الطلب (هنا يحدث الخصم المباشر من قاعدة البيانات)
+// 4. إنهاء الشراء وتأكيد الطلب
 const checkoutReservation = async (req, res) => {
     const { id } = req.params;
 
@@ -148,12 +153,11 @@ const checkoutReservation = async (req, res) => {
     }
 };
 
-// 5. حذف حجز (سواء من السلة أو إلغاء بواسطة المطعم)
+// 5. حذف حجز أو إلغاؤه
 const deleteReservation = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // جلب الحجز قبل حذفه للتحقق من حالته والوجبة المرتبطة به
         const reservationCheck = await pool.query('SELECT * FROM reservations WHERE id = $1', [id]);
 
         if (reservationCheck.rows.length === 0) {
@@ -164,10 +168,8 @@ const deleteReservation = async (req, res) => {
         const food_id = reservation.food_id;
         const isConfirmed = reservation.status === 'confirmed';
 
-        // حذف الحجز من الجدول
         await pool.query('DELETE FROM reservations WHERE id = $1', [id]);
 
-        // إذا كان الحجز مؤكداً (تم الخصم منه عند الشراء)، نعيد إضافة +1 إلى الكمية المتاحة في المتجر
         if (isConfirmed) {
             const foodResult = await pool.query('SELECT quantity FROM food_listings WHERE id = $1', [food_id]);
             
@@ -189,10 +191,8 @@ const deleteReservation = async (req, res) => {
     }
 };
 
-module.exports = {
-    createReservation,
-    getUserReservations,
-    getDonorOrders,
-    checkoutReservation,
-    deleteReservation
-};
+exports.createReservation = createReservation;
+exports.getUserReservations = getUserReservations;
+exports.getDonorOrders = getDonorOrders;
+exports.checkoutReservation = checkoutReservation;
+exports.deleteReservation = deleteReservation;

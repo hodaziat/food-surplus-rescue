@@ -27,7 +27,6 @@ function FoodDetails() {
         setFood(res.data || null);
       })
       .catch(() => {
-        // Fallback في حال جلب القائمة كاملة
         api.get('/food')
           .then((res) => {
             const found = res.data.find((item) => String(item.id) === String(id));
@@ -44,7 +43,6 @@ function FoodDetails() {
     fetchFoodDetails();
   }, [fetchFoodDetails]);
 
-  // تحويل استخراج الكمية المتاحة إلى رقم نقي بأسلوب آمن
   const parseQuantity = (qty) => {
     if (typeof qty === 'number') return qty;
     if (!qty) return 0;
@@ -54,7 +52,7 @@ function FoodDetails() {
 
   const availableQty = food ? parseQuantity(food.quantity) : 0;
 
-  // تنفيذ الحجز المباشر وتحديث البيانات
+  // تنفيذ الحجز المباشر بدون تبرع من صفحة التفاصيل
   const handleReserve = async () => {
     if (!user) {
       alert('Bitte melden Sie sich an, um zu reservieren.');
@@ -78,16 +76,13 @@ function FoodDetails() {
 
       alert('Erfolgreich reserviert und dem Warenkorb hinzugefügt! 🛒');
       
-      // إطلاق حدث تحديث السلة في الترويسة Navbar
       window.dispatchEvent(new Event('updateCart'));
 
-      // 1. تحديث متزامن للكمية محلياً فوراً
       setFood((prevFood) => ({
         ...prevFood,
         quantity: Math.max(0, availableQty - 1)
       }));
 
-      // 2. إعادة جلب البيانات لتضمين أحدث التغيرات من السيرفر
       fetchFoodDetails();
     } catch (err) {
       console.error(err);
@@ -141,7 +136,6 @@ function FoodDetails() {
       </button>
 
       <div className="row g-4">
-        {/* تفاصيل الوجبة والصورة + قسم تقييم المطعم */}
         <div className="col-md-7">
           <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
             <div style={{ height: '280px', overflow: 'hidden', backgroundColor: '#f8f9fa' }}>
@@ -186,7 +180,7 @@ function FoodDetails() {
               <h5 className="fw-bold mb-2">Abholort:</h5>
               <p className="text-secondary">📍 {food.location || 'Erlangen Stadtmitte'}</p>
 
-              {/* زر الحجز المباشر المحدث */}
+              {/* زر الحجز المباشر بدون تبرع */}
               {!isOwner ? (
                 <button 
                   className="btn btn-success btn-lg w-100 mt-3 fw-bold py-2 rounded-3"
@@ -203,13 +197,11 @@ function FoodDetails() {
             </div>
           </div>
 
-          {/* قسم تقييم المتبرع */}
           {donorId && (
             <DonorReviews donorId={donorId} donorName={donorName} />
           )}
         </div>
 
-        {/* الخريطة */}
         <div className="col-md-5">
           <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
             <div className="card-header bg-white border-bottom-0 pt-3 px-3">

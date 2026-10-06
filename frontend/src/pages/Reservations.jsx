@@ -15,6 +15,7 @@ const Reservations = () => {
 
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [isCouponApplied, setIsCouponApplied] = useState(false);
+  const [selectedDonation, setSelectedDonation] = useState(0); // حالة اختيار التبرع من السلة
 
   let user = null;
   try {
@@ -122,7 +123,8 @@ const Reservations = () => {
   };
 
   const originalTotalPrice = cartItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
-  const finalTotalPrice = Math.max(0, originalTotalPrice - appliedDiscount);
+  const subTotal = originalTotalPrice + selectedDonation;
+  const finalTotalPrice = Math.max(0, subTotal - appliedDiscount);
 
   const handleApplyWelcomeCoupon = () => {
     setAppliedDiscount(5.0);
@@ -138,6 +140,7 @@ const Reservations = () => {
       foodTitle: firstItem ? (firstItem.title || 'Lebensmittel-Paket') : 'Lebensmittel-Paket',
       quantity: cartItems.length,
       totalPrice: finalTotalPrice,
+      totalDonation: selectedDonation,
       paymentMethod: selectedPayment
     };
 
@@ -147,7 +150,8 @@ const Reservations = () => {
           API.put(`/reservations/checkout/${item.reservation_id || item.id}`, {
             payment_method: selectedPayment,
             payment_status: selectedPayment === 'Barzahlung' ? 'Pending' : 'Paid',
-            status: 'confirmed'
+            status: 'confirmed',
+            donation_amount: selectedDonation // إرسال التبرع المختار
           }).catch((err) => console.log('Checkout single note:', err))
         )
       );
@@ -175,6 +179,7 @@ const Reservations = () => {
       setIsProcessing(false);
       setAppliedDiscount(0);
       setIsCouponApplied(false);
+      setSelectedDonation(0);
       setActiveTab('orders');
       
       window.dispatchEvent(new Event('updateCart'));
@@ -344,10 +349,34 @@ const Reservations = () => {
 
                 <div className="card border-0 shadow-sm rounded-4 p-4">
                   <h5 className="fw-bold text-dark mb-3">Zusammenfassung</h5>
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Anzahl Positionen:</span>
-                    <span className="fw-semibold">{groupedCartItems.length}</span>
+                  
+                  {/* قائمة منسدلة لاختيار التبرع مباشرة من السلة */}
+                  <div className="mb-3">
+                    <label className="fw-semibold text-dark small mb-1">❤️ Spende für soziale Projekte:</label>
+                    <select 
+                      className="form-select form-select-sm rounded-3 shadow-sm"
+                      value={selectedDonation}
+                      onChange={(e) => setSelectedDonation(parseFloat(e.target.value))}
+                    >
+                      <option value={0}>Keine Spende (0,00 €)</option>
+                      <option value={1}>1,00 € Spende</option>
+                      <option value={2}>2,00 € Spende</option>
+                      <option value={5}>5,00 € Spende</option>
+                    </select>
                   </div>
+
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Speisen-Wert:</span>
+                    <span className="fw-semibold">{originalTotalPrice.toFixed(2)} €</span>
+                  </div>
+
+                  {selectedDonation > 0 && (
+                    <div className="d-flex justify-content-between mb-2 text-success">
+                      <span>Spende:</span>
+                      <span className="fw-semibold">+ {selectedDonation.toFixed(2)} €</span>
+                    </div>
+                  )}
+
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted">Gesamtstückzahl:</span>
                     <span className="fw-semibold">{cartItems.length} Stk.</span>
@@ -388,6 +417,8 @@ const Reservations = () => {
               {confirmedOrders.map((order) => {
                 const isExpired = new Date(order.expiration_date) < new Date();
                 const itemPrice = parseFloat(order.price || 0);
+                const donationVal = parseFloat(order.donation_amount || 0);
+                const orderTotal = itemPrice + donationVal;
 
                 return (
                   <div key={order.reservation_id || order.id} className="col-md-12">
@@ -406,7 +437,7 @@ const Reservations = () => {
                               Zahlungsmethode: <strong>{order.payment_method || 'Online'}</strong>
                             </div>
                             <div className="text-success fw-bold">
-                              {itemPrice === 0 ? 'GRATIS' : `${itemPrice.toFixed(2)} €`}
+                              {orderTotal.toFixed(2)} € {donationVal > 0 && <span className="text-muted small fw-normal">(inkl. {donationVal.toFixed(2)} € Spende)</span>}
                             </div>
                           </div>
                         </div>
@@ -428,7 +459,8 @@ const Reservations = () => {
                               id: order.reservation_id || order.id,
                               foodTitle: order.title,
                               quantity: 1,
-                              totalPrice: itemPrice,
+                              totalPrice: orderTotal,
+                              totalDonation: donationVal,
                               paymentMethod: order.payment_method || 'Online'
                             })}
                           >
