@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const HeroBanner = ({ currentUser }) => {
+  const isDonor = currentUser && (currentUser.role === 'donor' || currentUser.user_role === 'donor');
+
   return (
     <div 
       className="text-white text-center py-5 mb-5 shadow-sm"
@@ -18,7 +20,7 @@ const HeroBanner = ({ currentUser }) => {
           Gemeinsam gegen Lebensmittelverschwendung. Retten Sie frische Lebensmittel in Ihrer Nähe.
         </p>
 
-        {currentUser && currentUser.role === 'donor' ? (
+        {isDonor ? (
           <Link to="/add-food" className="btn btn-warning btn-lg fw-bold px-4 py-2 shadow-sm text-dark">
             ➕ Jetzt Angebot erstellen
           </Link>

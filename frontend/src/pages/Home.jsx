@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import API from '../services/api';
 import { Link } from 'react-router-dom';
 import HeroBanner from '../components/HeroBanner';
@@ -21,7 +21,7 @@ const Home = () => {
     console.error('Error parsing stored user:', parseErr);
   }
 
-  const fetchListings = async () => {
+  const fetchListings = useCallback(async () => {
     try {
       const res = await API.get('/food');
       setListings(res.data || []);
@@ -30,11 +30,11 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchListings();
-  }, []);
+  }, [fetchListings]);
 
   const handleDelete = async (id) => {
     if (window.confirm('Möchten Sie dieses Angebot wirklich löschen?')) {
@@ -176,7 +176,7 @@ const Home = () => {
             <div className="fs-1 mb-3">🔍</div>
             <h5 className={`fw-bold ${isDark ? 'text-white' : 'text-secondary'}`}>Keine passenden Angebote gefunden.</h5>
             <p className={isDark ? 'text-light' : 'text-muted'}>Versuchen Sie einen anderen Suchbegriff oder eine andere Kategorie.</p>
-            {currentUser && (currentUser.role === 'donor' || currentUser.user_role === 'donor') && (
+            {isDonor && (
               <div>
                 <Link to="/add-food" className="btn btn-outline-success fw-bold px-4 mt-2">
                   Lebensmittel anbieten

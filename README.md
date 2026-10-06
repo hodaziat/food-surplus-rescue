@@ -1,85 +1,60 @@
-# 🌿 Food Surplus Rescue Erlangen (Full-Stack Web Platform)
----
+# 🍏 Food Surplus Rescue Erlangen
 
-<a name="english"></a>
-## 🇬🇧 English Version
-
-### 📌 Project Overview
-**Food Surplus Rescue Erlangen** is a modern Full-Stack web application designed to combat food waste in the city of Erlangen. The platform connects local food providers (such as bakeries, grocery stores, and restaurants) with community members to rescue excess meals either for free or at discounted prices.
+Food Surplus Rescue Erlangen ist eine Full-Stack-Webanwendung, die entwickelt wurde, um Lebensmittelverschwendung in Erlangen zu reduzieren. Sie verbindet lokale Lebensmittelspender (Restaurants, Supermärkte und Bäckereien) direkt mit Endkunden sowie sozialen Organisationen und Tafeln, um frische, überschüssige Lebensmittel vor der Entsorgung zu retten.
 
 ---
 
-### ✨ Key Features & Role-Based Access Control
-The application supports 3 distinct user roles with strict security permissions:
+## 🚀 Technologie-Stack
 
-1. **Customer / General User (`user`)**:
-   * Browse active food surplus listings with real-time availability.
-   * Search and filter listings by title or specific categories.
-   * Interactive Leaflet map integration to view geographic locations of available food in Erlangen.
-   * Reserve surplus food items and manage shopping cart reservations.
-   * Instant, real-time cancellation of reservations with automatic cart counter updates (no page refresh required).
+### **Frontend:**
+* **React 19** (`react-scripts`)
+* **React Router v6** (für Routing und geschützte Routen / Protected Routes)
+* **Bootstrap 5 & React-Bootstrap** (für ein modernes, responsives UI-Design)
+* **Leaflet & React-Leaflet** (für interaktive Karten und Standortanzeigen)
+* **jspdf** (für den Export von Belegen und Quittungen als PDF)
 
-2. **Food Provider / Donor (`donor`)**:
-   * Create and publish new food surplus offers with expiration dates and quantities.
-   * Manage owned listings directly from the UI via quick Edit ✏️ and Delete 🗑️ modals.
-   * Automated prevention against self-reserving owned listings.
-
-3. **Administrator (`admin`)**:
-   * Full moderation capabilities across all listings and platform data.
-   * Direct removal of inappropriate or expired content.
+### **Backend:**
+* **Node.js & Express.js** (für die RESTful API und Server-Logik)
+* **PostgreSQL** (relationale Datenbank für Benutzer, Angebote, Reservierungen und Nachrichten)
+* **`pg` (node-postgres)** (für Pool-Verbindungen und transaktionssichere Datenbankabfragen zur Vermeidung von Race Conditions)
 
 ---
 
-### 🛠️ Tech Stack & Libraries
+## ✨ Hauptfunktionen & Implementierte Features
 
-#### **Frontend**:
-* **React.js**: Modular UI components for single-page architecture (SPA).
-* **React Router Dom**: Client-side routing between pages (`Home`, `Reservations`, `Add Listing`, etc.).
-* **Bootstrap 5 & React-Bootstrap**: Responsive, modern, and mobile-friendly UI layout.
-* **Axios**: Promised-based HTTP client for seamless API calls to the Express backend.
-* **Leaflet & React-Leaflet**: Interactive map rendering for geographical tracking in Erlangen.
-* **BroadcastChannel API & Custom Events**: Real-time cross-component state synchronization (Navbar cart updates without reloading).
+1. **Intelligentes Warenkorb- und Reservierungssystem:**
+   * Dynamische Berechnung der verfügbaren Mengen (`available_quantity`), wobei aktive Reservierungen anderer Benutzer berücksichtigt werden.
+   * Transaktionssicherer Checkout-Prozess mit automatischer Bestandsreduzierung in der PostgreSQL-Datenbank.
+   * Automatische Ausblendung des Warenkorbs für Spender (`donor`) und Administratoren.
 
-#### **Backend**:
-* **Node.js & Express.js**: RESTful API architecture handling routing (`/api/auth`, `/api/food`, `/api/reservations`).
-* **PostgreSQL**: Relational database storing structured user data, listings, and reservations.
-* **pg (node-postgres)**: PostgreSQL client for Node.js executing safe SQL queries.
-* **JSON Web Token (JWT)**: Secure user authentication and stateless session management.
-* **bcrypt / bcryptjs**: Password hashing and salt encryption before storing to DB.
-* **CORS & Dotenv**: Cross-Origin Resource Sharing handling and environment variable security.
+2. **Einheitliches Admin-Dashboard (AdminMessages & AdminSpecialRequests):**
+   * Zentralisiertes Tab-basiertes Administrationspanel zur Vermeidung von White-Screen-Feitern und für flüssige Navigation:
+     * **📥 Eingegangene Nachrichten:** Empfang und Verwaltung direkter Kontaktanfragen mit E-Mail-Antwortfunktion.
+     * **📁 Archiv:** Übersicht archivierter Nachrichten mit Optionen zur Wiederherstellung oder **permanentem Löschen**.
+     * **🤝 Sonderanfragen:** Verwaltung spezieller Lebensmittel- und Großmengenanfragen von sozialen Vereinen und Tafeln.
+
+3. **Sicherheit & Authentifizierung:**
+   * Token-basierte Authentifizierung (JWT) mit Client-seitiger Sitzungsvalidierung (Ablaufprüfung nach 1 Stunde Inaktivität / `ONE_HOUR_MS`).
+   * Schutz sensibler Routen (`ProtectedRoute`) für Admins und registrierte Benutzer.
 
 ---
 
-### 🗄️ Database Schema
+## 📂 Projektstruktur
 
-```sql
--- 1. Users Table
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) DEFAULT 'user', -- 'user', 'donor', 'admin'
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 2. Food Listings Table
-CREATE TABLE food_listings (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(150) NOT NULL,
-    description TEXT,
-    quantity VARCHAR(50) DEFAULT '1',
-    category VARCHAR(50) DEFAULT 'Sonstiges',
-    expiration_date DATE,
-    donor_id INT REFERENCES users(id) ON DELETE CASCADE,
-    status VARCHAR(20) DEFAULT 'available',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 3. Reservations Table
-CREATE TABLE reservations (
-    id SERIAL PRIMARY KEY,
-    food_id INT REFERENCES food_listings(id) ON DELETE CASCADE,
-    receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
-    reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+```text
+food-surplus-rescue-erlangen/
+├── backend/
+│   ├── config/              # Datenbankkonfiguration (db.js)
+│   ├── controllers/         # Geschäftslogik (foodController, reservationsController, etc.)
+│   ├── models/              # Datenmodelle (Contact.js, etc.)
+│   ├── routes/              # API-Routen (contactRoutes.js, specialRequests, etc.)
+│   └── server.js            # Einstiegspunkt des Node.js-Servers
+│
+└── frontend/
+    ├── src/
+    │   ├── components/      # Wiederverwendbare UI-Komponenten (Navbar, Footer, ChatWidget)
+    │   ├── pages/           # Anwendungsseiten (Home, AdminMessages, CheckoutPage, etc.)
+    │   ├── services/        # Axios-API-Konfiguration (api.js)
+    │   ├── App.jsx          # Zentraler Router und Auth-Logik
+    │   └── index.js         # React-Einstiegspunkt
+    └── package.json

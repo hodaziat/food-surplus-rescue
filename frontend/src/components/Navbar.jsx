@@ -4,15 +4,14 @@ import API from '../services/api';
 
 const Navbar = () => {
   const [reservationCount, setReservationCount] = useState(0);
-  // حالة التحكم بفتح وإغلاق القائمة في الموبايل
   const [isNavOpen, setIsNavOpen] = useState(false);
 
-  // دالة جلب عدد عناصر السلة (الطلبات غير المدفوعة/المعلقة فقط)
-  const fetchReservationCount = useCallback(async () => {
-    const storedUser = localStorage.getItem('user');
-    const user = storedUser ? JSON.parse(storedUser) : null;
+  const storedUser = localStorage.getItem('user');
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const isDonor = user && (user.role === 'donor' || user.user_role === 'donor');
 
-    if (!user || !user.id) {
+  const fetchReservationCount = useCallback(async () => {
+    if (!user || !user.id || isDonor) {
       setReservationCount(0);
       return;
     }
@@ -28,7 +27,7 @@ const Navbar = () => {
     } catch (err) {
       console.error('Fehler beim Laden der Reservierungsanzahl:', err);
     }
-  }, []);
+  }, [user, isDonor]);
 
   useEffect(() => {
     fetchReservationCount();
@@ -62,13 +61,9 @@ const Navbar = () => {
     window.location.href = '/';
   };
 
-  // إغلاق القائمة تلقائياً عند الضغط على أي رابط
   const closeNav = () => {
     setIsNavOpen(false);
   };
-
-  const storedUser = localStorage.getItem('user');
-  const user = storedUser ? JSON.parse(storedUser) : null;
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
@@ -92,39 +87,36 @@ const Navbar = () => {
 
         {/* Navbar Links */}
         <div className={`collapse navbar-collapse ${isNavOpen ? 'show' : ''}`} id="navbarNav">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0 mt-2 mt-lg-0">
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li className="nav-item">
-              <Link className="nav-link fw-semibold py-2" to="/" onClick={closeNav}>Startseite</Link>
+              <Link className="nav-link fw-semibold" to="/" onClick={closeNav}>Startseite</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link fw-semibold py-2" to="/services" onClick={closeNav}>Dienstleistungen</Link>
+              <Link className="nav-link fw-semibold" to="/services" onClick={closeNav}>Dienstleistungen</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link fw-semibold text-success py-2" to="/special-request" onClick={closeNav}>
+              <Link className="nav-link fw-semibold text-success" to="/special-request" onClick={closeNav}>
                 🤝 Sonderanfragen
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link fw-semibold py-2" to="/about" onClick={closeNav}>Über uns</Link>
+              <Link className="nav-link fw-semibold" to="/about" onClick={closeNav}>Über uns</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link fw-semibold py-2" to="/contact" onClick={closeNav}>Kontakt</Link>
+              <Link className="nav-link fw-semibold" to="/contact" onClick={closeNav}>Kontakt</Link>
             </li>
           </ul>
 
-          {/* Right Side Actions - منسقة لتصبح عمودية وعريضة على الموبايل */}
-          <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2 gap-lg-3 my-2 my-lg-0 border-top border-lg-0 pt-3 pt-lg-0">
-            
+          {/* Right Side Actions */}
+          <div className="d-flex align-items-center gap-2">
             {user ? (
               <>
-                {user.role === 'donor' && (
-                  <Link to="/add-listing" className="btn btn-success btn-sm fw-semibold py-2" onClick={closeNav}>
+                {isDonor ? (
+                  <Link to="/add-food" className="btn btn-success btn-sm fw-semibold" onClick={closeNav}>
                     ➕ Angebot erstellen
                   </Link>
-                )}
-
-                {user.role === 'user' && (
-                  <Link to="/reservations" className="btn btn-outline-success btn-sm position-relative py-2" onClick={closeNav}>
+                ) : (
+                  <Link to="/reservations" className="btn btn-outline-success btn-sm position-relative" onClick={closeNav}>
                     🛒 Reservierungen
                     {reservationCount > 0 && (
                       <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -134,25 +126,24 @@ const Navbar = () => {
                   </Link>
                 )}
 
-                <span className="text-muted small fw-semibold text-center text-lg-start my-1 my-lg-0">
+                <span className="text-muted small fw-semibold ms-2">
                   Hallo, {user.name}
                 </span>
 
-                <button onClick={handleLogout} className="btn btn-outline-danger btn-sm py-2">
+                <button onClick={handleLogout} className="btn btn-outline-danger btn-sm">
                   Abmelden
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="btn btn-outline-dark btn-sm py-2" onClick={closeNav}>
+                <Link to="/login" className="btn btn-outline-dark btn-sm" onClick={closeNav}>
                   Anmelden
                 </Link>
-                <Link to="/register" className="btn btn-success btn-sm py-2" onClick={closeNav}>
+                <Link to="/register" className="btn btn-success btn-sm" onClick={closeNav}>
                   Registrieren
                 </Link>
               </>
             )}
-
           </div>
 
         </div>

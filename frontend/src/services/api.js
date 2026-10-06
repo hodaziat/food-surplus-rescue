@@ -28,12 +28,14 @@ API.interceptors.response.use(
     (error) => {
         // إذا كان الخطأ 401 (غير مسموح / انتهت صلاحية التوكن)
         if (error.response && error.response.status === 401) {
-            // حذف بيانات المستخدم والتوكن من المتصفح
             localStorage.removeItem('token');
-            localStorage.removeItem('user'); // إذا كنت تخزن بيانات المستخدم أيضاً
+            localStorage.removeItem('user');
+            localStorage.removeItem('username');
 
-            // إعادة توجيه المستخدم إلى صفحة تسجيل الدخول تلقائياً
-            window.location.href = '/login'; 
+            // التوجيه إلى صفحة تسجيل الدخول فقط إذا لم نكن فيها بالفعل
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login'; 
+            }
         }
         return Promise.reject(error);
     }

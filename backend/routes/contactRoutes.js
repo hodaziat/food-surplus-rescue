@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// مسار لجلب الرسائل النشطة (دعم الطلب على / و على /messages)
+// مسار لجلب الرسائل النشطة
 router.get(['/', '/messages'], async (req, res) => {
   try {
     const messages = await Contact.findAllActive();
@@ -30,7 +30,7 @@ router.get(['/', '/messages'], async (req, res) => {
   }
 });
 
-// مسار لجلب الرسائل المؤرشفة (دعم /archived و /messages/archived)
+// مسار لجلب الرسائل المؤرشفة
 router.get(['/archived', '/messages/archived'], async (req, res) => {
   try {
     const messages = await Contact.findAllArchived();
@@ -41,7 +41,7 @@ router.get(['/archived', '/messages/archived'], async (req, res) => {
   }
 });
 
-// مسار لأرشفة رسالة (دعم /:id/archive و /messages/:id/archive)
+// مسار لأرشفة رسالة
 router.put(['/:id/archive', '/messages/:id/archive'], async (req, res) => {
   try {
     await Contact.archive(req.params.id);
@@ -52,7 +52,7 @@ router.put(['/:id/archive', '/messages/:id/archive'], async (req, res) => {
   }
 });
 
-// مسار لإلغاء أرشفة رسالة (دعم /:id/unarchive و /messages/:id/unarchive)
+// مسار لإلغاء أرشفة رسالة
 router.put(['/:id/unarchive', '/messages/:id/unarchive'], async (req, res) => {
   try {
     await Contact.unarchive(req.params.id);
@@ -60,6 +60,20 @@ router.put(['/:id/unarchive', '/messages/:id/unarchive'], async (req, res) => {
   } catch (err) {
     console.error('Contact Unarchive Error:', err.message);
     res.status(500).json({ message: 'Fehler beim Wiederherstellen.' });
+  }
+});
+
+// مسار لحذف رسالة نهائياً (دعم /:id و /messages/:id) [جديد]
+router.delete(['/:id', '/messages/:id'], async (req, res) => {
+  try {
+    const deleted = await Contact.delete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Nachricht nicht gefunden.' });
+    }
+    res.json({ message: 'Nachricht erfolgreich gelöscht.' });
+  } catch (err) {
+    console.error('Contact Delete Error:', err.message);
+    res.status(500).json({ message: 'Fehler beim Löschen der Nachricht.' });
   }
 });
 

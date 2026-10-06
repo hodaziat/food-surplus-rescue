@@ -23,21 +23,32 @@ const createReservation = async (req, res) => {
 
         const totalQty = parseInt(String(foodItem.quantity).replace(/\D/g, ''), 10) || 0;
 
-        // حساب عدد الحجوزات المعلقة بالسلة لهذه الوجبة
+        // حساب الحجوزات المعلقة للآخرين
         const pendingRes = await pool.query(
-            "SELECT COUNT(*) FROM reservations WHERE food_id = $1 AND (status = 'pending' OR status IS NULL)",
-            [food_id]
+            `SELECT COUNT(*) FROM reservations 
+             WHERE food_id = $1 
+               AND (status = 'pending' OR status IS NULL)
+               AND receiver_id != $2`,
+            [food_id, receiver_id]
         );
-        const pendingCount = parseInt(pendingRes.rows[0].count, 10) || 0;
+        const otherPendingCount = parseInt(pendingRes.rows[0].count, 10) || 0;
 
-        if (pendingCount >= totalQty || totalQty <= 0) {
+        // حساب الحجوزات في سلة المستخدم الحالية
+        const userCartRes = await pool.query(
+            `SELECT COUNT(*) FROM reservations 
+             WHERE food_id = $1 
+               AND receiver_id = $2
+               AND (status = 'pending' OR status IS NULL)`,
+            [food_id, receiver_id]
+        );
+        const userCartCount = parseInt(userCartRes.rows[0].count, 10) || 0;
+
+        if (totalQty <= 0 || (userCartCount + otherPendingCount) >= totalQty) {
             return res.status(400).json({ message: 'Leider sind keine weiteren Portionen verfügbar.' });
         }
 
-        // تحديد قيمة التبرع (إذا وُجدت، أو 0.00 افتراضياً)
         const finalDonation = donation_amount ? parseFloat(donation_amount) : 0.00;
 
-        // إنشاء الحجز بحالة 'pending' مع قيمة التبرع
         const newReservation = await pool.query(
             "INSERT INTO reservations (food_id, receiver_id, status, donation_amount) VALUES ($1, $2, 'pending', $3) RETURNING *",
             [food_id, receiver_id, finalDonation]
@@ -53,7 +64,7 @@ const createReservation = async (req, res) => {
     }
 };
 
-// 2. جلب جميع حجوزات وطلبات المستخدم مع حساب الكمية المتبقية
+// 2. جلب جميع حجوزات وطلبات المستخدم مع حساب الكمية المتاحة
 const getUserReservations = async (req, res) => {
     const { userId } = req.params;
 
@@ -69,11 +80,19 @@ const getUserReservations = async (req, res) => {
                 reservations.donation_amount,
                 food_listings.title, 
                 food_listings.description, 
-                CAST(REGEXP_REPLACE(food_listings.quantity::text, '[^0-9]', '', 'g') AS INTEGER) AS total_quantity,
-                (
-                  CAST(REGEXP_REPLACE(food_listings.quantity::text, '[^0-9]', '', 'g') AS INTEGER) - 
-                  (SELECT COUNT(*) FROM reservations r2 WHERE r2.food_id = food_listings.id AND (r2.status = 'pending' OR r2.status IS NULL))
-                ) AS available_quantity,
+                COALESCE(NULLIF(REGEXP_REPLACE(food_listings.quantity::text, '[^0-9]', '', 'g'), ''), '0')::INTEGER AS total_quantity,
+                
+                GREATEST(0, (
+                  COALESCE(NULLIF(REGEXP_REPLACE(food_listings.quantity::text, '[^0-9]', '', 'g'), ''), '0')::INTEGER - 
+                  (
+                    SELECT COUNT(*) 
+                    FROM reservations r2 
+                    WHERE r2.food_id = food_listings.id 
+                      AND (r2.status = 'pending' OR r2.status IS NULL)
+                      AND r2.receiver_id != $1::INTEGER
+                  )
+                )) AS available_quantity,
+
                 food_listings.image_url,
                 food_listings.expiration_date,
                 COALESCE(food_listings.price, 0.00) AS price,
@@ -125,7 +144,7 @@ const getDonorOrders = async (req, res) => {
     }
 };
 
-// 4. إنهاء الشراء وتأكيد الطلب
+// 4. إنهاء الشراء وتأكيد الطلب (معدلة خصيصاً لمنع أخطاء الخصم المزدوج)
 const checkoutReservation = async (req, res) => {
     const { id } = req.params;
 
@@ -139,20 +158,20 @@ const checkoutReservation = async (req, res) => {
         const food_id = resCheck.rows[0].food_id;
 
         if (resCheck.rows[0].status !== 'confirmed') {
+            // أ. تغيير حالة الحجز إلى مؤكد
             await pool.query("UPDATE reservations SET status = 'confirmed' WHERE id = $1", [id]);
 
-            const foodRes = await pool.query('SELECT quantity FROM food_listings WHERE id = $1', [food_id]);
-            if (foodRes.rows.length > 0) {
-                const currentQty = parseInt(String(foodRes.rows[0].quantity).replace(/\D/g, ''), 10) || 0;
-                const newQty = Math.max(0, currentQty - 1);
-                
-                const newStatus = newQty <= 0 ? 'reserved' : 'available';
-
-                await pool.query(
-                    'UPDATE food_listings SET quantity = $1, status = $2 WHERE id = $3',
-                    [newQty.toString(), newStatus, food_id]
-                );
-            }
+            // ب. خصم واحد مباشر ومضمون في قاعدة البيانات
+            await pool.query(
+                `UPDATE food_listings 
+                 SET quantity = GREATEST(0, (COALESCE(NULLIF(REGEXP_REPLACE(quantity::text, '[^0-9]', '', 'g'), ''), '0')::INTEGER - 1))::text,
+                     status = CASE 
+                         WHEN (COALESCE(NULLIF(REGEXP_REPLACE(quantity::text, '[^0-9]', '', 'g'), ''), '0')::INTEGER - 1) <= 0 THEN 'reserved' 
+                         ELSE 'available' 
+                     END
+                 WHERE id = $1`,
+                [food_id]
+            );
         }
 
         const updatedRes = await pool.query(
@@ -191,17 +210,13 @@ const deleteReservation = async (req, res) => {
         await pool.query('DELETE FROM reservations WHERE id = $1', [id]);
 
         if (isConfirmed) {
-            const foodResult = await pool.query('SELECT quantity FROM food_listings WHERE id = $1', [food_id]);
-            
-            if (foodResult.rows.length > 0) {
-                const currentQty = parseInt(String(foodResult.rows[0].quantity).replace(/\D/g, ''), 10) || 0;
-                const updatedQty = currentQty + 1;
-
-                await pool.query(
-                    "UPDATE food_listings SET quantity = $1, status = 'available' WHERE id = $2",
-                    [updatedQty.toString(), food_id]
-                );
-            }
+            await pool.query(
+                `UPDATE food_listings 
+                 SET quantity = (COALESCE(NULLIF(REGEXP_REPLACE(quantity::text, '[^0-9]', '', 'g'), ''), '0')::INTEGER + 1)::text,
+                     status = 'available'
+                 WHERE id = $1`,
+                [food_id]
+            );
         }
 
         res.status(200).json({ message: 'Reservierung erfolgreich storniert und Menge aktualisiert.' });

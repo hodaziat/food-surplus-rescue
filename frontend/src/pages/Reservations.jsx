@@ -25,21 +25,23 @@ const Reservations = () => {
     console.error('Error parsing stored user:', parseErr);
   }
 
+  const userId = user?.id;
+
   const fetchReservations = useCallback(async () => {
-    if (!user || !user.id) {
+    if (!userId) {
       setLoading(false);
       return;
     }
 
     try {
-      const res = await API.get(`/reservations/user/${user.id}`);
+      const res = await API.get(`/reservations/user/${userId}`);
       setReservations(res.data || []);
     } catch (err) {
       console.error('Fehler beim Laden der Reservierungen:', err);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     fetchReservations();
@@ -52,7 +54,11 @@ const Reservations = () => {
   const groupedCartItems = Object.values(
     cartItems.reduce((acc, item) => {
       const fId = item.food_id;
-      const totalAvailable = parseInt(item.available_quantity ?? item.total_quantity ?? 999, 10);
+      // حساب الكمية الإجمالية المتوفرة للوجبة بدقة
+      const totalAvailable = parseInt(
+        item.available_quantity ?? item.total_quantity ?? item.quantity ?? 999,
+        10
+      );
 
       if (!acc[fId]) {
         acc[fId] = {
@@ -72,9 +78,9 @@ const Reservations = () => {
   const handleIncrease = async (item) => {
     if (isUpdating) return;
 
-    // ⛔ منع إرسال الطلب فوراً إذا تجاوز العدد المتاح
+    // ⛔ منع الإضافة وإظهار التنبيه إذا وصل عدد الوجبات بالسلة للكمية الكلية المتاحة
     if (item.maxAvailable !== undefined && item.cartQuantity >= item.maxAvailable) {
-      alert('Leider sind keine weiteren Portionen verfügbar.');
+      alert('Alle verfügbaren Portionen befinden sich bereits in Ihrem Warenkorb.');
       return;
     }
 
@@ -294,6 +300,11 @@ const Reservations = () => {
                                 <div className="text-success fw-bold fs-6">
                                   {singlePrice === 0 ? 'GRATIS' : `${singlePrice.toFixed(2)} € (Gesamt: ${itemTotalPrice.toFixed(2)} €)`}
                                 </div>
+                                {isMaxReached && (
+                                  <small className="text-danger fw-bold d-block mt-1">
+                                    ⚠️ Alle verfügbaren Portionen reserviert ({item.maxAvailable} Stk.)
+                                  </small>
+                                )}
                               </div>
                             </div>
 
@@ -419,7 +430,7 @@ const Reservations = () => {
         <div>
           {confirmedOrders.length === 0 ? (
             <div className="card border-0 shadow-sm p-5 text-center rounded-4">
-              <div className="fs-1 mb-2">🛍️</div>
+              <div className="fs-1 mb-2">🛍</div>
               <h5 className="fw-bold text-secondary">Keine vergangenen Bestellungen vorhanden.</h5>
               <p className="text-muted">Ihre bestätigten Käufe werden hier angezeigt.</p>
             </div>

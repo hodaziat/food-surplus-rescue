@@ -10,13 +10,11 @@ const DonorReviews = ({ donorId, donorName }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // حالة لتخزين النصوص المؤقتة لردود صاحب المطعم لكل تقييم
   const [replyInputs, setReplyInputs] = useState({});
 
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
 
-  // التحقق بشكل مرن (سواء كان رقم أو نص) مما إذا كان المستخدم هو صاحب المطعم أو مشرف
   const isOwner = user && donorId && (String(user.id) === String(donorId) || String(user.donor_id) === String(donorId));
   const isAdmin = user && (user.role === 'admin' || user.user_role === 'admin');
 
@@ -83,7 +81,6 @@ const DonorReviews = ({ donorId, donorName }) => {
     }
   };
 
-  // دالة إرسال رد صاحب المطعم
   const handleReplySubmit = async (reviewId) => {
     const replyText = replyInputs[reviewId];
     if (!replyText || !replyText.trim()) {
@@ -126,7 +123,7 @@ const DonorReviews = ({ donorId, donorName }) => {
           </div>
         </div>
 
-        {/* نموذج كتابة التقييم (لا يظهر لصاحب المطعم) */}
+        {/* نموذج كتابة التقييم */}
         {user && !isOwner && !isAdmin && (
           <form onSubmit={handleSubmit} className="mb-4 bg-light p-4 rounded-4 border-0 shadow-sm">
             <h6 className="fw-bold text-dark mb-3">✍️ Partner bewerten</h6>
@@ -213,7 +210,7 @@ const DonorReviews = ({ donorId, donorName }) => {
                   </small>
                 </div>
 
-                {/* عرض رد صاحب المطعم إذا وجد */}
+                {/* عرض رد صاحب المطعم */}
                 {rev.reply && (
                   <div className="mt-2 bg-white p-3 rounded-3 border-start border-success border-4 shadow-sm ms-md-4">
                     <div className="d-flex align-items-center gap-2 mb-1">
@@ -223,7 +220,7 @@ const DonorReviews = ({ donorId, donorName }) => {
                   </div>
                 )}
 
-                {/* زر وصندوق كتابة الرد يظهر حصراً لصاحب المطعم المالك */}
+                {/* كتابة الرد */}
                 {isOwner && !rev.reply && (
                   <div className="mt-3 ms-md-4 bg-white p-3 rounded-3 shadow-sm">
                     <label className="form-label small fw-bold text-success mb-1">Als Partner antworten:</label>

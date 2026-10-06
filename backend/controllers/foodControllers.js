@@ -44,8 +44,10 @@ const createFoodListing = async (req, res) => {
     }
 };
 
-// 2. جلب جميع الإعلانات وحساب الكمية المتاحة الدقيقة
+// 2. جلب جميع الإعلانات وحساب الكمية المتاحة الدقيقة (معدل)
 const getAllFoodListings = async (req, res) => {
+    const { userId } = req.query; // يستقبل رقم المستخدم إن وجد
+
     try {
         // أ. تنظيف الوجبات المنتهية الصلاحية التي لم تُشترَ
         const expiredItems = await pool.query(
@@ -79,7 +81,7 @@ const getAllFoodListings = async (req, res) => {
             );
         }
 
-        // ب. جلب الوجبات الصالحة وحساب الحجوزات المعلقة بالسلات
+        // ب. جلب الوجبات وحساب الحجوزات المعلقة للآخرين فقط
         const listings = await pool.query(
             `SELECT food_listings.*, 
                     users.name AS donor_name, 
@@ -89,17 +91,21 @@ const getAllFoodListings = async (req, res) => {
                         FROM reservations 
                         WHERE reservations.food_id = food_listings.id 
                           AND (reservations.status = 'pending' OR reservations.status IS NULL)
-                    ), 0) AS pending_reservations
+                          AND ($1::int IS NULL OR reservations.receiver_id != $1::int)
+                    ), 0) AS other_pending_reservations
              FROM food_listings 
              JOIN users ON food_listings.donor_id = users.id 
              WHERE food_listings.expiration_date >= NOW() 
-             ORDER BY food_listings.created_at DESC`
+             ORDER BY food_listings.created_at DESC`,
+            [userId ? parseInt(userId, 10) : null]
         );
 
         const availableListings = listings.rows.map(item => {
             const totalQty = parseInt(String(item.quantity).replace(/\D/g, ''), 10) || 0;
-            const pendingQty = parseInt(item.pending_reservations, 10) || 0;
-            const availableQty = Math.max(0, totalQty - pendingQty);
+            const otherPendingQty = parseInt(item.other_pending_reservations, 10) || 0;
+            
+            // المتاح الفلي لك = الإجمالي مطروح منه ما حجزه المستخدمون الآخرون فقط
+            const availableQty = Math.max(0, totalQty - otherPendingQty);
 
             return {
                 ...item,
@@ -114,7 +120,7 @@ const getAllFoodListings = async (req, res) => {
     }
 };
 
-// 3. جلب عنصر طعام واحد برقم الـ ID (جديد لصفحة التعديل)
+// 3. جلب عنصر طعام واحد برقم الـ ID
 const getFoodListingById = async (req, res) => {
     const { id } = req.params;
 

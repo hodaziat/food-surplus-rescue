@@ -47,7 +47,6 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
     ? parseInt(item.available_quantity, 10) 
     : (parseInt(String(item.quantity).replace(/\D/g, ''), 10) || 0);
 
-  // استخراج شارات الخصائص والملاحظات إن وجدت في الوصف
   let displayDescription = item.description || 'Keine weitere Beschreibung vorhanden.';
   let tagsList = [];
 
@@ -153,7 +152,6 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
               {item.title}
             </h5>
 
-            {/* عرض أوسمة الميزات ومسببات الحساسية إن وجدت */}
             {tagsList.length > 0 && (
               <div className="d-flex flex-wrap gap-1 mb-2">
                 {tagsList.map((tag, idx) => (

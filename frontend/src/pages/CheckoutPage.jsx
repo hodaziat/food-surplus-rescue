@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const CheckoutPage = () => {
   const [paidSuccess, setPaidSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  // دالة تحاكي عملية الدفع الوهمي
   const handleDummyPayment = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       setPaidSuccess(true);
-    }, 1000); // محاكاة وقت التحويل البنكي أو المعالجة لمدة ثانية واحدة
+    }, 1000);
   };
 
   return (
@@ -22,7 +23,13 @@ const CheckoutPage = () => {
         {paidSuccess ? (
           <div className="alert alert-success rounded-4 p-4 shadow-sm">
             <h4 className="fw-bold mb-2">🎉 Vielen Dank!</h4>
-            <p className="mb-0">Die Zahlung wurde erfolgreich abgeschlossen.</p>
+            <p className="mb-3">Die Zahlung wurde erfolgreich abgeschlossen.</p>
+            <button 
+              onClick={() => navigate('/')} 
+              className="btn btn-success fw-bold rounded-pill px-4"
+            >
+              Zurück zur Startseite
+            </button>
           </div>
         ) : (
           <div>

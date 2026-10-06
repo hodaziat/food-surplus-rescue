@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/api';
 
 const SiteReviews = () => {
@@ -13,7 +13,7 @@ const SiteReviews = () => {
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const res = await API.get('/site-reviews');
       setReviews(res.data.reviews || []);
@@ -24,11 +24,11 @@ const SiteReviews = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [fetchReviews]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -140,7 +140,7 @@ const SiteReviews = () => {
           </div>
         )}
 
-        {/* عرض قائمة التقييمات المكتوبة بكرات عصرية وأنيقة */}
+        {/* عرض قائمة التقييمات */}
         {loading ? (
           <div className="text-center py-4">
             <div className="spinner-border text-success" role="status"></div>
@@ -149,56 +149,71 @@ const SiteReviews = () => {
           <div className="text-center text-muted py-4">Noch keine Bewertungen vorhanden. Seien Sie der Erste!</div>
         ) : (
           <div className="row g-4">
-            {reviews.map((rev) => (
-              <div key={rev.id} className="col-md-6 col-lg-4">
-                <div className={`card border-0 shadow-sm rounded-4 h-100 p-3 position-relative overflow-hidden ${isDark ? 'bg-secondary text-white' : 'bg-white'}`}>
-                  {/* شريط تجميلي علوي للكرت */}
-                  <div className="position-absolute top-0 start-0 w-100 bg-success" style={{ height: '4px' }}></div>
-                  
-                  <div className="card-body d-flex flex-column justify-content-between p-3">
-                    <div>
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <div className="d-flex align-items-center gap-2">
-                          <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '38px', height: '38px', fontSize: '15px' }}>
-                            {rev.user_name ? rev.user_name.charAt(0).toUpperCase() : 'U'}
+            {reviews.map((rev) => {
+              const adminReplyText = rev.admin_reply || rev.reply;
+
+              return (
+                <div key={rev.id} className="col-md-6 col-lg-4">
+                  <div className={`card border-0 shadow-sm rounded-4 h-100 p-3 position-relative overflow-hidden ${isDark ? 'bg-secondary text-white' : 'bg-white'}`}>
+                    <div className="position-absolute top-0 start-0 w-100 bg-success" style={{ height: '4px' }}></div>
+                    
+                    <div className="card-body d-flex flex-column justify-content-between p-3">
+                      <div>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <div className="d-flex align-items-center gap-2">
+                            <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '38px', height: '38px', fontSize: '15px' }}>
+                              {rev.user_name ? rev.user_name.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div>
+                              <h6 className={`fw-bold mb-0 ${isDark ? 'text-white' : 'text-dark'}`}>{rev.user_name}</h6>
+                              <small className="text-muted" style={{ fontSize: '0.7rem' }}>Verifizierter Nutzer</small>
+                            </div>
                           </div>
-                          <div>
-                            <h6 className={`fw-bold mb-0 ${isDark ? 'text-white' : 'text-dark'}`}>{rev.user_name}</h6>
-                            <small className="text-muted" style={{ fontSize: '0.7rem' }}>Verifizierter Nutzer</small>
-                          </div>
+
+                          {user && Number(rev.user_id) === Number(user.id) && (
+                            <button 
+                              type="button"
+                              className="btn btn-link text-danger p-0 text-decoration-none border-0" 
+                              onClick={() => handleDelete(rev.id)}
+                              title="Bewertung löschen"
+                            >
+                              🗑️
+                            </button>
+                          )}
                         </div>
 
-                        {user && Number(rev.user_id) === Number(user.id) && (
-                          <button 
-                            type="button"
-                            className="btn btn-link text-danger p-0 text-decoration-none border-0" 
-                            onClick={() => handleDelete(rev.id)}
-                            title="Bewertung löschen"
-                          >
-                            🗑️
-                          </button>
+                        <div className="mb-2 text-warning fs-6">
+                          {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
+                        </div>
+
+                        <p className={`small mb-3 fst-italic ${isDark ? 'text-light' : 'text-secondary'}`}>
+                          "{rev.comment}"
+                        </p>
+
+                        {/* إظهار رد الإدارة / الأدمن إذا كان متوفراً */}
+                        {adminReplyText && (
+                          <div className={`mt-3 p-2 px-3 rounded-3 border-start border-3 border-success ${isDark ? 'bg-dark text-light' : 'bg-light text-dark'}`}>
+                            <div className="fw-bold text-success small mb-1" style={{ fontSize: '0.75rem' }}>
+                              🛡️ Antwort vom Admin:
+                            </div>
+                            <p className="mb-0 small fst-normal" style={{ fontSize: '0.8rem' }}>
+                              {adminReplyText}
+                            </p>
+                          </div>
                         )}
                       </div>
 
-                      <div className="mb-2 text-warning fs-6">
-                        {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
+                      <div className="d-flex justify-content-between align-items-center border-top pt-2 mt-3 border-opacity-10">
+                        <span className="badge bg-light text-secondary border fw-normal" style={{ fontSize: '0.65rem' }}>Erlangen</span>
+                        <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+                          📅 {new Date(rev.created_at).toLocaleDateString('de-DE')}
+                        </small>
                       </div>
-
-                      <p className={`small mb-3 fst-italic ${isDark ? 'text-light' : 'text-secondary'}`}>
-                        "{rev.comment}"
-                      </p>
-                    </div>
-
-                    <div className="d-flex justify-content-between align-items-center border-top pt-2 mt-2 border-opacity-10">
-                      <span className="badge bg-light text-secondary border fw-normal" style={{ fontSize: '0.65rem' }}>Erlangen</span>
-                      <small className={`text-muted`} style={{ fontSize: '0.7rem' }}>
-                        📅 {new Date(rev.created_at).toLocaleDateString('de-DE')}
-                      </small>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

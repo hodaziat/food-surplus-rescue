@@ -33,6 +33,12 @@ const Contact = {
 
   unarchive: async (id) => {
     await db.query('UPDATE contact_messages SET is_archived = FALSE WHERE id = $1', [id]);
+  },
+
+  // دالة حذف رسالة نهائياً من قاعدة البيانات (جديد)
+  delete: async (id) => {
+    const result = await db.query('DELETE FROM contact_messages WHERE id = $1 RETURNING *', [id]);
+    return result.rows[0];
   }
 };
 

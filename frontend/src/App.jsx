@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // المكونات الأساسية (Components)
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import ChatWidget from './components/ChatWidget'; // استدعاء مكون الشات
+import ChatWidget from './components/ChatWidget';
 
 // الصفحات (Pages)
 import Home from './pages/Home';
@@ -29,10 +29,10 @@ import AdminMessages from './pages/AdminMessages';
 import AdminSpecialRequests from './pages/AdminSpecialRequests';
 import CheckoutPage from './pages/CheckoutPage'; 
 
-// ثابث مدة الصلاحية: ساعة واحدة بالملي ثانية (60 دقيقة × 60 ثانية × 1000)
+// مدة الصلاحية: ساعة واحدة بالملي ثانية
 const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
 
-// مكون حماية المسارات (ProtectedRoute) مع فحص انتهاء الساعة
+// مكون حماية المسارات (ProtectedRoute)
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   const loginTime = localStorage.getItem('loginTime');
@@ -53,7 +53,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => localStorage.getItem('username') || null);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -106,22 +106,28 @@ function App() {
             <Route path="/food/:id" element={<FoodDetails />} />
             <Route path="/special-request" element={<SpecialRequest />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
-            <Route path="/admin/special-requests" element={<AdminSpecialRequests />} />
-
+            
             {/* مسار التبرع / الدفع الوهمي */}
             <Route path="/checkout" element={<CheckoutPage />} />
 
-            {/* المسارات المحمية */}
+            {/* المسارات المحمية مع توحيد مسارات الأدمن */}
+            <Route path="/admin/special-requests" element={<ProtectedRoute><AdminSpecialRequests /></ProtectedRoute>} />
+            <Route path="/admin/messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
+            <Route path="/admin-messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
+
             <Route path="/add-food" element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
             <Route path="/add-listing" element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
             <Route path="/edit-food/:id" element={<ProtectedRoute><EditFood /></ProtectedRoute>} />
             <Route path="/donor-orders" element={<ProtectedRoute><DonorOrdersPage /></ProtectedRoute>} />
             <Route path="/donor-reviews" element={<ProtectedRoute><DonorReviewsPage /></ProtectedRoute>} />
             <Route path="/admin-reviews" element={<ProtectedRoute><AdminReviewsPage /></ProtectedRoute>} />
-            <Route path="/admin-messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
+            
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+            {/* تحويل أي مسار غير معروف للصفحة الرئيسية لمنع الشاشة البيضاء */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
 

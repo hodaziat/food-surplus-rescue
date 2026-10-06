@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { sender: 'bot', text: 'Hallo! 🌿 Wie kann ich Ihnen heute helfen?' }
   ]);
+  const chatBottomRef = useRef(null);
 
   const faqList = [
     { q: 'Wie reserviere ich Essen?', a: 'Suchen Sie ein Angebot aus und klicken Sie auf "Reservieren", um es in den Warenkorb zu legen.' },
     { q: 'Wie kann ich Spender werden?', a: 'Registrieren Sie sich einfach mit der Rolle "Spender / Restaurant" und erstellen Sie Angebote.' },
     { q: 'Wo finde ich den Abholort?', a: 'Die Adresse finden Sie in den Details des jeweiligen Angebots.' }
   ];
+
+  // التمرير للأسفل تلقائياً عند إضافة رسائل جديدة
+  useEffect(() => {
+    if (isOpen) {
+      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isOpen]);
 
   const handleQuestionClick = (q, a) => {
     setMessages((prev) => [
@@ -33,11 +41,15 @@ const ChatWidget = () => {
           <div className="card-body overflow-auto p-3" style={{ height: '220px', backgroundColor: '#f8f9fa' }}>
             {messages.map((msg, index) => (
               <div key={index} className={`d-flex mb-2 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-                <div className={`p-2 rounded-3 small max-w-75 ${msg.sender === 'user' ? 'bg-success text-white' : 'bg-white text-dark shadow-sm border'}`}>
+                <div 
+                  className={`p-2 rounded-3 small ${msg.sender === 'user' ? 'bg-success text-white' : 'bg-white text-dark shadow-sm border'}`}
+                  style={{ maxWidth: '80%' }}
+                >
                   {msg.text}
                 </div>
               </div>
             ))}
+            <div ref={chatBottomRef} />
           </div>
 
           {/* خيارات الأسئلة السريعة */}
@@ -59,7 +71,7 @@ const ChatWidget = () => {
             {/* زر التوجيه المباشر للبريد الإلكتروني */}
             <a
               href="mailto:kontakt@foodsurplus-erlangen.de?subject=Anfrage%20über%20Support-Chat"
-              className="btn btn-dark btn-sm w-100 rounded-3 text-decoration-none py-1"
+              className="btn btn-dark btn-sm w-100 rounded-3 text-decoration-none py-1 text-center"
               style={{ fontSize: '0.78rem' }}
             >
               ✉️ Per E-Mail anfragen
@@ -71,7 +83,7 @@ const ChatWidget = () => {
       {/* زر الأيقونة الثابت في الزاوية */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="btn btn-success rounded-circle p-3 shadow-lg d-flex align-items-center justify-content-center"
+        className="btn btn-success rounded-circle p-3 shadow-lg d-flex align-items-center justify-content-center border-0"
         style={{ width: '60px', height: '60px' }}
       >
         <span className="fs-4">{isOpen ? '✖' : '💬'}</span>

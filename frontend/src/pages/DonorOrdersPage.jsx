@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Card, Table, Badge, Button, Alert } from 'react-bootstrap';
 import API from '../services/api';
 
@@ -14,7 +14,6 @@ const DonorOrdersPage = () => {
         console.error('Error parsing stored user:', parseErr);
     }
     
-    // التحقق المباشر والآمن لصلاحية الحساب
     const isDonor = user && (
         user.role === 'donor' || 
         user.user_role === 'donor' || 
@@ -22,28 +21,28 @@ const DonorOrdersPage = () => {
         user.role === 'restaurant'
     );
 
-    const fetchDonorOrders = async () => {
-        if (!user || !user.id) {
+    const userId = user?.id;
+
+    const fetchDonorOrders = useCallback(async () => {
+        if (!userId) {
             setLoading(false);
             return;
         }
         
         try {
-            const res = await API.get(`/reservations/donor-orders/${user.id}`);
+            const res = await API.get(`/reservations/donor-orders/${userId}`);
             setOrders(res.data || []);
         } catch (err) {
             console.error('Fehler beim Laden der Bestellungen:', err);
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId]);
 
     useEffect(() => {
         fetchDonorOrders();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id]);
+    }, [fetchDonorOrders]);
 
-    // إلغاء/حذف الطلب من قبل المطعم
     const handleCancelOrder = async (reservationId) => {
         if (window.confirm('Möchten Sie diese Reservierung wirklich stornieren?')) {
             try {

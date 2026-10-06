@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import API from '../services/api';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,14 +20,15 @@ const Login = ({ onLogin }) => {
       localStorage.setItem('username', userName);
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      // 👈 تسجيل وقت الدخول بالملي ثانية لحساب الانتهاء تلقائياً
+      // تسجيل وقت الدخول بالملي ثانية
       localStorage.setItem('loginTime', Date.now().toString());
 
       if (onLogin) {
         onLogin(userName);
       }
 
-      navigate('/');
+      // إعادة التوجيه وتحديث الواجهة مباشرة
+      window.location.href = '/';
     } catch (err) {
       const backendMessage = err.response?.data?.message || err.response?.data?.error;
       setError(backendMessage || 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Daten.');

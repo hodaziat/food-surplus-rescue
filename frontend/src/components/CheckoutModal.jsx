@@ -16,11 +16,9 @@ const CheckoutModal = ({
 
   const handleSandboxCheckout = () => {
     setSimulating(true);
-    // إظهار رسالة النجاح أولاً
     setTimeout(() => {
       setSimulating(false);
       setPaypalSuccess(true);
-      // الانتظار لمدة 1.5 ثانية ليراها المستخدم بوضوح ثم إتمام الطلب
       setTimeout(() => {
         setPaypalSuccess(false);
         onConfirm(); 
@@ -45,8 +43,12 @@ const CheckoutModal = ({
 
             <p className="text-muted small mb-3">Wählen Sie Ihre Zahlungsmethode:</p>
 
-            {/* خيار الدفع نقداً */}
-            <div className={`form-check p-3 rounded-3 mb-2 border ${selectedPayment === 'Barzahlung' ? 'border-success bg-success bg-opacity-10' : 'bg-light'}`}>
+            {/* Barzahlung */}
+            <div 
+              className={`form-check p-3 rounded-3 mb-2 border ${selectedPayment === 'Barzahlung' ? 'border-success bg-success bg-opacity-10' : 'bg-light'}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSelectedPayment('Barzahlung')}
+            >
               <input 
                 className="form-check-input" 
                 type="radio" 
@@ -56,14 +58,18 @@ const CheckoutModal = ({
                 checked={selectedPayment === 'Barzahlung'}
                 onChange={(e) => setSelectedPayment(e.target.value)}
               />
-              <label className="form-check-label w-100 d-flex justify-content-between align-items-center cursor-pointer" htmlFor="barzahlung">
+              <label className="form-check-label w-100 d-flex justify-content-between align-items-center ms-2" htmlFor="barzahlung" style={{ cursor: 'pointer' }}>
                 <span className="fw-bold text-dark">💵 Barzahlung bei Abholung</span>
                 <span className="text-muted small">Vor Ort bezahlen</span>
               </label>
             </div>
 
-            {/* خيار بايبال Sandbox */}
-            <div className={`form-check p-3 rounded-3 mb-2 border ${selectedPayment === 'PayPal' ? 'border-success bg-success bg-opacity-10' : 'bg-light'}`}>
+            {/* PayPal */}
+            <div 
+              className={`form-check p-3 rounded-3 mb-2 border ${selectedPayment === 'PayPal' ? 'border-success bg-success bg-opacity-10' : 'bg-light'}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSelectedPayment('PayPal')}
+            >
               <input 
                 className="form-check-input" 
                 type="radio" 
@@ -73,14 +79,18 @@ const CheckoutModal = ({
                 checked={selectedPayment === 'PayPal'}
                 onChange={(e) => setSelectedPayment(e.target.value)}
               />
-              <label className="form-check-label w-100 d-flex justify-content-between align-items-center cursor-pointer" htmlFor="paypal">
+              <label className="form-check-label w-100 d-flex justify-content-between align-items-center ms-2" htmlFor="paypal" style={{ cursor: 'pointer' }}>
                 <span className="fw-bold text-dark">🅿️ PayPal (Sandbox)</span>
                 <span className="text-muted small">Online bezahlen</span>
               </label>
             </div>
 
-            {/* خيار البطاقة */}
-            <div className={`form-check p-3 rounded-3 mb-3 border ${selectedPayment === 'Kreditkarte' ? 'border-success bg-success bg-opacity-10' : 'bg-light'}`}>
+            {/* Kreditkarte */}
+            <div 
+              className={`form-check p-3 rounded-3 mb-3 border ${selectedPayment === 'Kreditkarte' ? 'border-success bg-success bg-opacity-10' : 'bg-light'}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSelectedPayment('Kreditkarte')}
+            >
               <input 
                 className="form-check-input" 
                 type="radio" 
@@ -90,13 +100,12 @@ const CheckoutModal = ({
                 checked={selectedPayment === 'Kreditkarte'}
                 onChange={(e) => setSelectedPayment(e.target.value)}
               />
-              <label className="form-check-label w-100 d-flex justify-content-between align-items-center cursor-pointer" htmlFor="kreditkarte">
+              <label className="form-check-label w-100 d-flex justify-content-between align-items-center ms-2" htmlFor="kreditkarte" style={{ cursor: 'pointer' }}>
                 <span className="fw-bold text-dark">💳 EC-Karte / Kreditkarte</span>
                 <span className="text-muted small">Visa / Mastercard</span>
               </label>
             </div>
 
-            {/* زر بايبال مع رسالة النجاح الواظحة */}
             {selectedPayment === 'PayPal' && (
               <div className="mt-3 p-3 bg-white rounded-3 border text-center shadow-sm">
                 {paypalSuccess ? (

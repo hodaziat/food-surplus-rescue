@@ -13,8 +13,12 @@ L.Icon.Default.mergeOptions({
 const FoodMap = ({ foodListings = [] }) => {
   const erlangenCenter = [49.5897, 11.0039];
   
-  // هل الخريطة تعرض وجبة واحدة فقط (صفحة التفاصيل)؟
   const isSingleItem = foodListings.length === 1;
+
+  // تمركز الخريطة على موقع الوجبة إذا كانت معروضة لوحدها
+  const mapCenter = isSingleItem && (foodListings[0].lat || foodListings[0].latitude)
+    ? [foodListings[0].lat || foodListings[0].latitude, foodListings[0].lng || foodListings[0].longitude]
+    : erlangenCenter;
 
   return (
     <div className="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
@@ -29,8 +33,8 @@ const FoodMap = ({ foodListings = [] }) => {
         </div>
         <div style={{ height: '280px', width: '100%', borderRadius: '10px', overflow: 'hidden' }}>
           <MapContainer 
-            center={erlangenCenter} 
-            zoom={13} 
+            center={mapCenter} 
+            zoom={isSingleItem ? 15 : 13} 
             scrollWheelZoom={false} 
             style={{ height: '100%', width: '100%' }}
           >
@@ -52,7 +56,6 @@ const FoodMap = ({ foodListings = [] }) => {
                     position={position}
                     eventHandlers={{
                       add: (e) => {
-                        // يفتح النافذة تلقائياً فقط إذا كان العنصر معروضاً لوحده (في صفحة التفاصيل)
                         if (isSingleItem) {
                           e.target.openPopup();
                         }
@@ -68,7 +71,6 @@ const FoodMap = ({ foodListings = [] }) => {
                 );
               })
             ) : (
-              /* دبوس افتراضي في الرئيسية لا يفتح تلقائياً */
               <Marker position={erlangenCenter}>
                 <Popup autoPan={false}>
                   <strong>Erlangen Zentrum</strong><br />
