@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'http://10.3.47.105:5000/api',
 });
 
 // إرفاق التوكين مع كل طلب بشكل آلي
@@ -26,7 +26,7 @@ API.interceptors.response.use(
         if (error.response && error.response.status === 401) {
             // حذف بيانات المستخدم والتوكن من المتصفح
             localStorage.removeItem('token');
-            localStorage.removeItem('user'); // إذا كنتِ تخزنين بيانات المستخدم أيضاً
+            localStorage.removeItem('user'); // إذا كنت تخزن بيانات المستخدم أيضاً
 
             // إعادة توجيه المستخدم إلى صفحة تسجيل الدخول تلقائياً
             window.location.href = '/login'; 

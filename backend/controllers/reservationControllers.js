@@ -121,7 +121,7 @@ const getDonorOrders = async (req, res) => {
     }
 };
 
-// 4. إنهاء الشراء وتأكيد الطلب
+// 4. إنهاء الشراء وتأكيد الطلب (تمت معالجة قيد قاعدة البيانات هنا)
 const checkoutReservation = async (req, res) => {
     const { id } = req.params;
 
@@ -137,7 +137,9 @@ const checkoutReservation = async (req, res) => {
             if (foodRes.rows.length > 0) {
                 const currentQty = parseInt(String(foodRes.rows[0].quantity).replace(/\D/g, ''), 10) || 0;
                 const newQty = Math.max(0, currentQty - 1);
-                const newStatus = newQty <= 0 ? 'unavailable' : 'available';
+                
+                // تم التغيير إلى 'reserved' بدلاً من 'unavailable' لكي يتقبلها constraint قاعدة البيانات
+                const newStatus = newQty <= 0 ? 'reserved' : 'available';
 
                 await pool.query(
                     'UPDATE food_listings SET quantity = $1, status = $2 WHERE id = $3',

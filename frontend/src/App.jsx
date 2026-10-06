@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 
 // المكونات الأساسية (Components)
 import Navbar from './components/Navbar';
@@ -29,13 +28,6 @@ import Datenschutz from './pages/Datenschutz';
 import AdminMessages from './pages/AdminMessages'; 
 import AdminSpecialRequests from './pages/AdminSpecialRequests';
 import CheckoutPage from './pages/CheckoutPage'; 
-
-// إعدادات بايبال التجريبية (Sandbox) مع الـ Client ID الحقيقي الخاص بك
-const paypalOptions = {
-  "client-id": "AU-1Ru2qOiOKmSixWyr8n...", 
-  currency: "EUR",
-  intent: "capture",
-};
 
 // ثابث مدة الصلاحية: ساعة واحدة بالملي ثانية (60 دقيقة × 60 ثانية × 1000)
 const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
@@ -97,48 +89,46 @@ function App() {
   }, []);
 
   return (
-    <PayPalScriptProvider options={paypalOptions}>
-      <Router>
-        <div className="d-flex flex-column min-vh-100 position-relative">
-          <Navbar user={user} onLogout={handleLogout} />
-          
-          <div className="flex-grow-1">
-            <Routes>
-              {/* المسارات العامة */}
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/partners" element={<Partners />} />
-              <Route path="/login" element={<Login onLogin={handleLogin} />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/food/:id" element={<FoodDetails />} />
-              <Route path="/special-request" element={<SpecialRequest />} />
-              <Route path="/datenschutz" element={<Datenschutz />} />
-              <Route path="/admin/special-requests" element={<AdminSpecialRequests />} />
+    <Router>
+      <div className="d-flex flex-column min-vh-100 position-relative">
+        <Navbar user={user} onLogout={handleLogout} />
+        
+        <div className="flex-grow-1">
+          <Routes>
+            {/* المسارات العامة */}
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/food/:id" element={<FoodDetails />} />
+            <Route path="/special-request" element={<SpecialRequest />} />
+            <Route path="/datenschutz" element={<Datenschutz />} />
+            <Route path="/admin/special-requests" element={<AdminSpecialRequests />} />
 
-              {/* مسار التبرع / الدفع الوهمي عبر بايبال */}
-              <Route path="/checkout" element={<CheckoutPage />} />
+            {/* مسار التبرع / الدفع الوهمي */}
+            <Route path="/checkout" element={<CheckoutPage />} />
 
-              {/* المسارات المحمية */}
-              <Route path="/add-food" element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
-              <Route path="/add-listing" element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
-              <Route path="/edit-food/:id" element={<ProtectedRoute><EditFood /></ProtectedRoute>} />
-              <Route path="/donor-orders" element={<ProtectedRoute><DonorOrdersPage /></ProtectedRoute>} />
-              <Route path="/donor-reviews" element={<ProtectedRoute><DonorReviewsPage /></ProtectedRoute>} />
-              <Route path="/admin-reviews" element={<ProtectedRoute><AdminReviewsPage /></ProtectedRoute>} />
-              <Route path="/admin-messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            </Routes>
-          </div>
-
-          <ChatWidget />
-          <Footer />
+            {/* المسارات المحمية */}
+            <Route path="/add-food" element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
+            <Route path="/add-listing" element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
+            <Route path="/edit-food/:id" element={<ProtectedRoute><EditFood /></ProtectedRoute>} />
+            <Route path="/donor-orders" element={<ProtectedRoute><DonorOrdersPage /></ProtectedRoute>} />
+            <Route path="/donor-reviews" element={<ProtectedRoute><DonorReviewsPage /></ProtectedRoute>} />
+            <Route path="/admin-reviews" element={<ProtectedRoute><AdminReviewsPage /></ProtectedRoute>} />
+            <Route path="/admin-messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          </Routes>
         </div>
-      </Router>
-    </PayPalScriptProvider>
+
+        <ChatWidget />
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

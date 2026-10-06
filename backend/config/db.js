@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-  host: 'host.docker.internal', // تم تثبيتها هنا لتعمل داخل دوكر بسلاسة
+  host: process.env.PGHOST || 'localhost', // تم تعديلها لتتصل بجهازك المحلي مباشرة
   user: process.env.PGUSER || 'postgres',
   password: process.env.PGPASSWORD || '00000',
   database: process.env.PGDATABASE || 'food_surplus_db',

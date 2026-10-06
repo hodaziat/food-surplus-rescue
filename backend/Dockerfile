@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # تثبيت الاعتماديات للإنتاج
-RUN npm install --production
+RUN npm install
 
 # نسخ باقي ملفات السيرفر
 COPY . .
