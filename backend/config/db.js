@@ -2,11 +2,11 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-  host: process.env.PGHOST,
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
-  database: process.env.PGDATABASE,
-  port: process.env.PGPORT,
+  host: 'host.docker.internal', // تم تثبيتها هنا لتعمل داخل دوكر بسلاسة
+  user: process.env.PGUSER || 'postgres',
+  password: process.env.PGPASSWORD || '00000',
+  database: process.env.PGDATABASE || 'food_surplus_db',
+  port: process.env.PGPORT || 5432,
 });
 
 pool.on('connect', () => {
