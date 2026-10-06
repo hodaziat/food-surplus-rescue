@@ -30,8 +30,8 @@ router.get(['/', '/messages'], async (req, res) => {
   }
 });
 
-// مسار لجلب الرسائل المؤرشفة
-router.get('/archived', async (req, res) => {
+// مسار لجلب الرسائل المؤرشفة (دعم /archived و /messages/archived)
+router.get(['/archived', '/messages/archived'], async (req, res) => {
   try {
     const messages = await Contact.findAllArchived();
     res.json(messages);
@@ -41,8 +41,8 @@ router.get('/archived', async (req, res) => {
   }
 });
 
-// مسار لأرشفة رسالة
-router.put('/:id/archive', async (req, res) => {
+// مسار لأرشفة رسالة (دعم /:id/archive و /messages/:id/archive)
+router.put(['/:id/archive', '/messages/:id/archive'], async (req, res) => {
   try {
     await Contact.archive(req.params.id);
     res.json({ message: 'Nachricht erfolgreich archiviert.' });
@@ -52,8 +52,8 @@ router.put('/:id/archive', async (req, res) => {
   }
 });
 
-// مسار لإلغاء أرشفة رسالة
-router.put('/:id/unarchive', async (req, res) => {
+// مسار لإلغاء أرشفة رسالة (دعم /:id/unarchive و /messages/:id/unarchive)
+router.put(['/:id/unarchive', '/messages/:id/unarchive'], async (req, res) => {
   try {
     await Contact.unarchive(req.params.id);
     res.json({ message: 'Nachricht aus dem Archiv geholt.' });
