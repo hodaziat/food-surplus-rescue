@@ -28,11 +28,11 @@ import DonorOrdersPage from './pages/DonorOrdersPage';
 import Datenschutz from './pages/Datenschutz';
 import AdminMessages from './pages/AdminMessages'; 
 import AdminSpecialRequests from './pages/AdminSpecialRequests';
-import CheckoutPage from './pages/CheckoutPage'; // صفحة الدفع عبر بايبال الجديدة
+import CheckoutPage from './pages/CheckoutPage'; 
 
-// إعدادات بايبال التجريبية (Sandbox)
+// إعدادات بايبال التجريبية (Sandbox) مع الـ Client ID الحقيقي الخاص بك
 const paypalOptions = {
-  "client-id": "test", // استبدل "test" بـ Client ID الخاص بك من لوحة مطوري بايبال لاحقاً إن أردت
+  "client-id": "AU-1Ru2qOiOKmSixWyr8n...", 
   currency: "EUR",
   intent: "capture",
 };

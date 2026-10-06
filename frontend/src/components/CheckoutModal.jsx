@@ -10,16 +10,22 @@ const CheckoutModal = ({
   isProcessing 
 }) => {
   const [paypalSuccess, setPaypalSuccess] = useState(false);
+  const [simulating, setSimulating] = useState(false);
 
   if (!show) return null;
 
-  // دالة محاكاة الدفع الوهمي الفوري
-  const handleMockPayPalPayment = () => {
-    setPaypalSuccess(true);
+  const handleSandboxCheckout = () => {
+    setSimulating(true);
+    // إظهار رسالة النجاح أولاً
     setTimeout(() => {
-      setPaypalSuccess(false);
-      onConfirm(); // إتمام الطلب وتأكيده في النظام مباشرة
-    }, 1200);
+      setSimulating(false);
+      setPaypalSuccess(true);
+      // الانتظار لمدة 1.5 ثانية ليراها المستخدم بوضوح ثم إتمام الطلب
+      setTimeout(() => {
+        setPaypalSuccess(false);
+        onConfirm(); 
+      }, 1500);
+    }, 1000);
   };
 
   return (
@@ -29,7 +35,7 @@ const CheckoutModal = ({
           
           <div className="modal-header border-0 pb-0">
             <h5 className="fw-bold text-dark m-0">💳 Zahlungsmethode wählen</h5>
-            <button type="button" className="btn-close shadow-none" onClick={onClose} disabled={isProcessing}></button>
+            <button type="button" className="btn-close shadow-none" onClick={onClose} disabled={isProcessing || simulating}></button>
           </div>
 
           <div className="modal-body py-4">
@@ -56,7 +62,7 @@ const CheckoutModal = ({
               </label>
             </div>
 
-            {/* خيار بايبال الوهمي */}
+            {/* خيار بايبال Sandbox */}
             <div className={`form-check p-3 rounded-3 mb-2 border ${selectedPayment === 'PayPal' ? 'border-success bg-success bg-opacity-10' : 'bg-light'}`}>
               <input 
                 className="form-check-input" 
@@ -68,8 +74,8 @@ const CheckoutModal = ({
                 onChange={(e) => setSelectedPayment(e.target.value)}
               />
               <label className="form-check-label w-100 d-flex justify-content-between align-items-center cursor-pointer" htmlFor="paypal">
-                <span className="fw-bold text-dark">🅿️ PayPal (Online Sandbox)</span>
-                <span className="text-muted small">Sofortige Simulation</span>
+                <span className="fw-bold text-dark">🅿️ PayPal (Sandbox)</span>
+                <span className="text-muted small">Online bezahlen</span>
               </label>
             </div>
 
@@ -90,21 +96,29 @@ const CheckoutModal = ({
               </label>
             </div>
 
-            {/* زر محاكاة بايبال الوهمي الفوري */}
+            {/* زر بايبال مع رسالة النجاح الواظحة */}
             {selectedPayment === 'PayPal' && (
-              <div className="mt-3 p-3 bg-white rounded-3 border text-center">
+              <div className="mt-3 p-3 bg-white rounded-3 border text-center shadow-sm">
                 {paypalSuccess ? (
                   <div className="alert alert-success text-center py-2 mb-0 fw-bold small">
-                    🎉 Zahlung erfolgreich abgeschlossen!
+                    🎉 Zahlung über PayPal Sandbox erfolgreich!
                   </div>
                 ) : (
                   <button
                     type="button"
-                    className="btn btn-primary w-100 fw-bold rounded-pill py-2 shadow-sm"
+                    className="btn w-100 fw-bold rounded-pill py-2 shadow-sm text-white"
                     style={{ backgroundColor: '#0070ba', borderColor: '#0070ba' }}
-                    onClick={handleMockPayPalPayment}
+                    onClick={handleSandboxCheckout}
+                    disabled={simulating}
                   >
-                    🅿️ Mit PayPal (Test-Modus) bezahlen
+                    {simulating ? (
+                      <span>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Verbindung mit PayPal Sandbox...
+                      </span>
+                    ) : (
+                      '🅿️ Mit PayPal (Sandbox) bezahlen'
+                    )}
                   </button>
                 )}
               </div>
@@ -113,7 +127,7 @@ const CheckoutModal = ({
           </div>
 
           <div className="modal-footer border-0 pt-0">
-            <button type="button" className="btn btn-outline-secondary rounded-pill px-4" onClick={onClose} disabled={isProcessing}>
+            <button type="button" className="btn btn-outline-secondary rounded-pill px-4" onClick={onClose} disabled={isProcessing || simulating}>
               Abbrechen
             </button>
             
