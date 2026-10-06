@@ -4,8 +4,8 @@ const db = require('../config/db');
 const Contact = {
   create: async (name, email, subject, message) => {
     const query = `
-      INSERT INTO contact_messages (name, email, subject, message)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO contact_messages (name, email, subject, message, is_archived)
+      VALUES ($1, $2, $3, $4, FALSE)
       RETURNING *;
     `;
     const values = [name, email, subject || 'Allgemeine Anfrage', message];
@@ -15,7 +15,7 @@ const Contact = {
 
   findAllActive: async () => {
     const result = await db.query(
-      'SELECT * FROM contact_messages WHERE is_archived = FALSE ORDER BY created_at DESC'
+      'SELECT * FROM contact_messages WHERE is_archived = FALSE OR is_archived IS NULL ORDER BY created_at DESC'
     );
     return result.rows;
   },

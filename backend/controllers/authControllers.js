@@ -24,9 +24,9 @@ const loginUser = async (req, res) => {
             return res.status(400).json({ message: 'E-Mail oder Passwort falsch.' });
         }
 
-        // توليد توكن لمدة ساعة واحدة فقط
+        // توليد توكن لمدة ساعة واحدة
         const token = jwt.sign(
-            { id: userData.id, email: userData.email, role: userData.role },
+            { id: userData.id, email: userData.email, role: userData.role || userData.user_role || 'user' },
             JWT_SECRET,
             { expiresIn: '1h' } 
         );
@@ -50,7 +50,7 @@ const loginUser = async (req, res) => {
     }
 };
 
-// 2. إنشاء حساب جديد (مع إضافة الكوبون لأول مرة)
+// 2. إنشاء حساب جديد (مع التعامل المباشر مع أعمدة الكوبون)
 const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
 
@@ -62,19 +62,29 @@ const registerUser = async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-
-        // توليد كود كوبون ترحيبي فريد تلقائياً (مثل WELCOME-5928)
         const welcomeCouponCode = `WELCOME-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        // حفظ بيانات المستخدم الجديد مع الكوبون وحالة عدم الاستخدام (FALSE)
-        const newUser = await pool.query(
-            `INSERT INTO users (name, email, password, role, welcome_coupon, is_coupon_used) 
-             VALUES ($1, $2, $3, $4, $5, FALSE) 
-             RETURNING *`,
-            [name || 'User', email, hashedPassword, role || 'user', welcomeCouponCode]
-        );
-
-        const userData = newUser.rows[0];
+        let userData;
+        try {
+            // المحاولة الأولى: حفظ المستخدم مع الكوبون
+            const newUser = await pool.query(
+                `INSERT INTO users (name, email, password, role, welcome_coupon, is_coupon_used) 
+                 VALUES ($1, $2, $3, $4, $5, FALSE) 
+                 RETURNING *`,
+                [name || 'User', email, hashedPassword, role || 'user', welcomeCouponCode]
+            );
+            userData = newUser.rows[0];
+        } catch (couponErr) {
+            // في حال عدم وجود عمود welcome_coupon في جدول users القديم
+            console.warn('Coupon columns not found in database, registering without coupon columns.');
+            const newUserFallback = await pool.query(
+                `INSERT INTO users (name, email, password, role) 
+                 VALUES ($1, $2, $3, $4) 
+                 RETURNING *`,
+                [name || 'User', email, hashedPassword, role || 'user']
+            );
+            userData = newUserFallback.rows[0];
+        }
 
         const token = jwt.sign(
             { id: userData.id, email: userData.email, role: userData.role },
@@ -90,8 +100,8 @@ const registerUser = async (req, res) => {
                 name: userData.name || userData.username || name,
                 email: userData.email,
                 role: userData.role || role || 'user',
-                welcome_coupon: userData.welcome_coupon,
-                is_coupon_used: false
+                welcome_coupon: userData.welcome_coupon || welcomeCouponCode,
+                is_coupon_used: userData.is_coupon_used || false
             }
         });
 
@@ -108,7 +118,7 @@ const updateProfile = async (req, res) => {
 
     try {
         const updatedUser = await pool.query(
-            'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, role, welcome_coupon, is_coupon_used',
+            'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, role',
             [name, email, id]
         );
 

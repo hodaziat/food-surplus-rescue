@@ -15,7 +15,7 @@ const Reservations = () => {
 
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [isCouponApplied, setIsCouponApplied] = useState(false);
-  const [selectedDonation, setSelectedDonation] = useState(0); // حالة اختيار التبرع من السلة
+  const [selectedDonation, setSelectedDonation] = useState(0);
 
   let user = null;
   try {
@@ -48,13 +48,17 @@ const Reservations = () => {
   const cartItems = reservations.filter((item) => item.status === 'pending' || !item.status);
   const confirmedOrders = reservations.filter((item) => item.status === 'confirmed');
 
+  // تجميع عناصر السلة وحساب الحد الأقصى المتاح لكل وجبة
   const groupedCartItems = Object.values(
     cartItems.reduce((acc, item) => {
       const fId = item.food_id;
+      const totalAvailable = parseInt(item.available_quantity ?? item.total_quantity ?? 999, 10);
+
       if (!acc[fId]) {
         acc[fId] = {
           ...item,
           cartQuantity: 1,
+          maxAvailable: totalAvailable,
           reservationIds: [item.reservation_id || item.id]
         };
       } else {
@@ -67,6 +71,13 @@ const Reservations = () => {
 
   const handleIncrease = async (item) => {
     if (isUpdating) return;
+
+    // ⛔ منع إرسال الطلب فوراً إذا تجاوز العدد المتاح
+    if (item.maxAvailable !== undefined && item.cartQuantity >= item.maxAvailable) {
+      alert('Leider sind keine weiteren Portionen verfügbar.');
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
@@ -78,7 +89,6 @@ const Reservations = () => {
       await fetchReservations();
       window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
-      console.error(err);
       alert(err.response?.data?.message || 'Leider sind keine weiteren Portionen verfügbar.');
     } finally {
       setIsUpdating(false);
@@ -151,7 +161,7 @@ const Reservations = () => {
             payment_method: selectedPayment,
             payment_status: selectedPayment === 'Barzahlung' ? 'Pending' : 'Paid',
             status: 'confirmed',
-            donation_amount: selectedDonation // إرسال التبرع المختار
+            donation_amount: selectedDonation
           }).catch((err) => console.log('Checkout single note:', err))
         )
       );
@@ -266,6 +276,7 @@ const Reservations = () => {
                   {groupedCartItems.map((item) => {
                     const singlePrice = parseFloat(item.price || 0);
                     const itemTotalPrice = singlePrice * item.cartQuantity;
+                    const isMaxReached = item.maxAvailable !== undefined && item.cartQuantity >= item.maxAvailable;
 
                     return (
                       <div key={item.food_id} className="col-md-12">
@@ -299,9 +310,10 @@ const Reservations = () => {
                                 <span className="fw-bold px-3 text-dark">{item.cartQuantity}</span>
                                 <button 
                                   type="button" 
-                                  disabled={isUpdating}
+                                  disabled={isUpdating || isMaxReached}
                                   className="btn btn-light btn-sm fw-bold px-2 py-0 border-0" 
                                   onClick={() => handleIncrease(item)}
+                                  title={isMaxReached ? "Keine weiteren Portionen verfügbar" : "Portion hinzufügen"}
                                 >
                                   ➕
                                 </button>
@@ -350,7 +362,6 @@ const Reservations = () => {
                 <div className="card border-0 shadow-sm rounded-4 p-4">
                   <h5 className="fw-bold text-dark mb-3">Zusammenfassung</h5>
                   
-                  {/* قائمة منسدلة لاختيار التبرع مباشرة من السلة */}
                   <div className="mb-3">
                     <label className="fw-semibold text-dark small mb-1">❤️ Spende für soziale Projekte:</label>
                     <select 

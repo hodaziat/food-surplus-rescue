@@ -1,21 +1,20 @@
 // backend/routes/specialRequest.js
 const express = require('express');
 const router = express.Router();
-const { createSpecialRequest } = require('../controllers/specialRequestController');
-const db = require('../config/db');
+const { 
+  createSpecialRequest, 
+  getAllSpecialRequests, 
+  deleteSpecialRequest 
+} = require('../controllers/specialRequestController');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 
-// مسار استقبال الطلب الخاص (إرسال)
+// 1. مسار إنشاء طلب خاص (متاح للجميع)
 router.post('/', createSpecialRequest);
 
-// مسار جلب جميع الطلبات الخاصة للوحة تحكم الأدمن
-router.get('/', async (req, res) => {
-  try {
-    const result = await db.query('SELECT * FROM special_requests ORDER BY created_at DESC');
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error('Fehler beim Abrufen der Sonderanfragen:', err);
-    res.status(500).json({ message: 'Fehler beim Abrufen der Sonderanfragen.' });
-  }
-});
+// 2. مسار جلب جميع الطلبات الخاصة (محمي للأدمن فقط)
+router.get('/', verifyAdmin, getAllSpecialRequests);
+
+// 3. مسار حذف طلب خاص (محمي للأدمن فقط)
+router.delete('/:id', verifyAdmin, deleteSpecialRequest);
 
 module.exports = router;

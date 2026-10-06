@@ -44,7 +44,7 @@ const addSiteReview = async (req, res) => {
     }
 };
 
-// 2. جلب جميع تقييمات الموقع مع حساب المتوسط واسم المستخدم وصاحب التقييم
+// 2. جلب جميع تقييمات الموقع مع حساب المتوسط واسم المستخدم والردود
 const getSiteReviews = async (req, res) => {
     try {
         const reviews = await pool.query(
@@ -53,10 +53,11 @@ const getSiteReviews = async (req, res) => {
                 site_reviews.user_id,
                 site_reviews.rating,
                 site_reviews.comment,
+                site_reviews.reply,
                 site_reviews.created_at,
-                users.name AS user_name
+                COALESCE(users.name, 'Anonym') AS user_name
              FROM site_reviews
-             JOIN users ON site_reviews.user_id = users.id
+             LEFT JOIN users ON site_reviews.user_id = users.id
              ORDER BY site_reviews.created_at DESC`
         );
 
@@ -75,7 +76,36 @@ const getSiteReviews = async (req, res) => {
     }
 };
 
-// 3. حذف تقييم الموقع
+// 3. إضافة أو تحديث رد الأدمن على تقييم الموقع
+const replyToSiteReview = async (req, res) => {
+    const { id } = req.params;
+    const { reply } = req.body;
+
+    if (!reply) {
+        return res.status(400).json({ message: 'Antwort ist erforderlich.' });
+    }
+
+    try {
+        const updatedReview = await pool.query(
+            `UPDATE site_reviews SET reply = $1 WHERE id = $2 RETURNING *`,
+            [reply, id]
+        );
+
+        if (updatedReview.rows.length === 0) {
+            return res.status(404).json({ message: 'Bewertung nicht gefunden' });
+        }
+
+        res.status(200).json({
+            message: 'Antwort erfolgreich gespeichert! 🎉',
+            review: updatedReview.rows[0]
+        });
+    } catch (err) {
+        console.error('Reply Site Review Error:', err.message);
+        res.status(500).json({ message: 'Serverfehler beim Speichern der Antwort.' });
+    }
+};
+
+// 4. حذف تقييم الموقع
 const deleteSiteReview = async (req, res) => {
     const { id } = req.params;
 
@@ -91,5 +121,6 @@ const deleteSiteReview = async (req, res) => {
 module.exports = {
     addSiteReview,
     getSiteReviews,
+    replyToSiteReview,
     deleteSiteReview
 };

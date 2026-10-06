@@ -8,7 +8,7 @@ const addDonorReview = async (req, res) => {
         return res.status(400).json({ message: 'Donor ID, Reviewer ID und Rating sind erforderlich.' });
     }
 
-    if (parseInt(donor_id) === parseInt(reviewer_id)) {
+    if (parseInt(donor_id, 10) === parseInt(reviewer_id, 10)) {
         return res.status(400).json({ message: 'Sie können sich nicht selbst bewerten.' });
     }
 
@@ -77,6 +77,27 @@ const getDonorReviews = async (req, res) => {
     } catch (err) {
         console.error('Get Donor Reviews Error:', err.message);
         res.status(500).json({ message: 'Serverfehler beim Laden der Bewertungen.' });
+    }
+};
+
+// جلب متوسط تقييم المطعم فقط (مفيد للبطاقات كـ FoodCard)
+const getDonorAverageRating = async (req, res) => {
+    const { donorId } = req.params;
+
+    try {
+        const avgResult = await pool.query(
+            `SELECT ROUND(AVG(rating), 1) AS average_rating, COUNT(*) AS total_reviews 
+             FROM donor_reviews WHERE donor_id = $1`,
+            [donorId]
+        );
+
+        res.status(200).json({
+            average_rating: avgResult.rows[0].average_rating || 0,
+            total_reviews: avgResult.rows[0].total_reviews || 0
+        });
+    } catch (err) {
+        console.error('Get Donor Average Rating Error:', err.message);
+        res.status(500).json({ message: 'Serverfehler beim Laden der Bewertung.' });
     }
 };
 
@@ -164,6 +185,7 @@ const replyToDonorReview = async (req, res) => {
 module.exports = {
     addDonorReview,
     getDonorReviews,
+    getDonorAverageRating,
     deleteDonorReview,
     replyToDonorReview,
     getAllDonorReviews

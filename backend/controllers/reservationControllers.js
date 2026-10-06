@@ -30,7 +30,7 @@ const createReservation = async (req, res) => {
         );
         const pendingCount = parseInt(pendingRes.rows[0].count, 10) || 0;
 
-        if (pendingCount >= totalQty) {
+        if (pendingCount >= totalQty || totalQty <= 0) {
             return res.status(400).json({ message: 'Leider sind keine weiteren Portionen verfügbar.' });
         }
 
@@ -53,7 +53,7 @@ const createReservation = async (req, res) => {
     }
 };
 
-// 2. جلب جميع حجوزات وطلبات المستخدم
+// 2. جلب جميع حجوزات وطلبات المستخدم مع حساب الكمية المتبقية
 const getUserReservations = async (req, res) => {
     const { userId } = req.params;
 
@@ -69,7 +69,11 @@ const getUserReservations = async (req, res) => {
                 reservations.donation_amount,
                 food_listings.title, 
                 food_listings.description, 
-                food_listings.quantity AS total_quantity,
+                CAST(REGEXP_REPLACE(food_listings.quantity::text, '[^0-9]', '', 'g') AS INTEGER) AS total_quantity,
+                (
+                  CAST(REGEXP_REPLACE(food_listings.quantity::text, '[^0-9]', '', 'g') AS INTEGER) - 
+                  (SELECT COUNT(*) FROM reservations r2 WHERE r2.food_id = food_listings.id AND (r2.status = 'pending' OR r2.status IS NULL))
+                ) AS available_quantity,
                 food_listings.image_url,
                 food_listings.expiration_date,
                 COALESCE(food_listings.price, 0.00) AS price,
@@ -121,16 +125,20 @@ const getDonorOrders = async (req, res) => {
     }
 };
 
-// 4. إنهاء الشراء وتأكيد الطلب (تمت معالجة قيد قاعدة البيانات هنا)
+// 4. إنهاء الشراء وتأكيد الطلب
 const checkoutReservation = async (req, res) => {
     const { id } = req.params;
 
     try {
         const resCheck = await pool.query('SELECT food_id, status FROM reservations WHERE id = $1', [id]);
         
-        if (resCheck.rows.length > 0 && resCheck.rows[0].status !== 'confirmed') {
-            const food_id = resCheck.rows[0].food_id;
+        if (resCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Reservierung nicht gefunden' });
+        }
 
+        const food_id = resCheck.rows[0].food_id;
+
+        if (resCheck.rows[0].status !== 'confirmed') {
             await pool.query("UPDATE reservations SET status = 'confirmed' WHERE id = $1", [id]);
 
             const foodRes = await pool.query('SELECT quantity FROM food_listings WHERE id = $1', [food_id]);
@@ -138,7 +146,6 @@ const checkoutReservation = async (req, res) => {
                 const currentQty = parseInt(String(foodRes.rows[0].quantity).replace(/\D/g, ''), 10) || 0;
                 const newQty = Math.max(0, currentQty - 1);
                 
-                // تم التغيير إلى 'reserved' بدلاً من 'unavailable' لكي يتقبلها constraint قاعدة البيانات
                 const newStatus = newQty <= 0 ? 'reserved' : 'available';
 
                 await pool.query(
@@ -148,7 +155,18 @@ const checkoutReservation = async (req, res) => {
             }
         }
 
-        res.status(200).json({ message: 'Checkout erfolgreich abgeschlossen.' });
+        const updatedRes = await pool.query(
+            `SELECT reservations.*, food_listings.title, food_listings.price 
+             FROM reservations 
+             JOIN food_listings ON reservations.food_id = food_listings.id 
+             WHERE reservations.id = $1`,
+            [id]
+        );
+
+        res.status(200).json({ 
+            message: 'Checkout erfolgreich abgeschlossen.',
+            reservation: updatedRes.rows[0]
+        });
     } catch (err) {
         console.error('Checkout Error:', err.message);
         res.status(500).json({ message: 'Serverfehler beim Checkout' });

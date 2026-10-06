@@ -11,7 +11,7 @@ const reservationRoutes = require('./routes/reservation');
 const specialRequestRoutes = require('./routes/specialRequest');
 const siteReviewRoutes = require('./routes/siteReviewRoutes');
 const donorReviewRoutes = require('./routes/donorReviewRoutes');
-const contactRoutes = require('./routes/contactRoutes'); // مسار التواصل المنفصل
+const contactRoutes = require('./routes/contactRoutes');
 
 const app = express();
 
@@ -27,7 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/site-reviews', siteReviewRoutes);
-app.use('/api/donor-reviews', donorReviewRoutes); // تم تصحيح الخطأ هنا بنجاح
+app.use('/api/donor-reviews', donorReviewRoutes);
 app.use('/api/special-requests', specialRequestRoutes);
 app.use('/api/contact', contactRoutes);
 

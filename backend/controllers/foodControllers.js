@@ -114,7 +114,33 @@ const getAllFoodListings = async (req, res) => {
     }
 };
 
-// 3. تحديث إعلان طعام
+// 3. جلب عنصر طعام واحد برقم الـ ID (جديد لصفحة التعديل)
+const getFoodListingById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const listing = await pool.query(
+            `SELECT food_listings.*, 
+                    users.name AS donor_name, 
+                    users.email AS donor_email
+             FROM food_listings 
+             LEFT JOIN users ON food_listings.donor_id = users.id 
+             WHERE food_listings.id = $1`,
+            [id]
+        );
+
+        if (listing.rows.length === 0) {
+            return res.status(404).json({ message: 'Food listing not found' });
+        }
+
+        res.status(200).json(listing.rows[0]);
+    } catch (err) {
+        console.error('Fetch Single Listing Error:', err.message);
+        res.status(500).json({ message: 'Server error while fetching single food listing' });
+    }
+};
+
+// 4. تحديث إعلان طعام
 const updateFoodListing = async (req, res) => {
     const { id } = req.params;
     const { title, category, description, quantity, expiration_date, price, original_price } = req.body;
@@ -169,7 +195,7 @@ const updateFoodListing = async (req, res) => {
     }
 };
 
-// 4. حذف إعلان طعام
+// 5. حذف إعلان طعام
 const deleteFoodListing = async (req, res) => {
     const { id } = req.params;
 
@@ -208,6 +234,7 @@ const deleteFoodListing = async (req, res) => {
 module.exports = {
     createFoodListing,
     getAllFoodListings,
+    getFoodListingById,
     updateFoodListing,
     deleteFoodListing
 };
