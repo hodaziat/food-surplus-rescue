@@ -29,7 +29,7 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/site-reviews', siteReviewRoutes);
 app.use('/api/donor-reviews', donorReviewRoutes);
 
-// إنشاء جدول الرسائل في قاعدة البيانات تلقائياً عند بدء التشغيل إن لم يكن موجوداً
+// إنشاء جدول الرسائل وإضافة عمود الأرشفة تلقائياً إذا كان الجدول قديماً
 const createContactTable = async () => {
   try {
     await db.query(`
@@ -39,10 +39,18 @@ const createContactTable = async () => {
         email VARCHAR(255) NOT NULL,
         subject VARCHAR(255) DEFAULT 'Allgemeine Anfrage',
         message TEXT NOT NULL,
+        is_archived BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('📥 Contact messages table is ready.');
+    
+    // للتأكد من إضافة العمود حتى لو كان الجدول منشأ مسبقاً بدون حقل الأرشفة
+    await db.query(`
+      ALTER TABLE contact_messages 
+      ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE;
+    `);
+
+    console.log('📥 Contact messages table is ready with archive feature.');
   } catch (err) {
     console.error('Error creating contact_messages table:', err);
   }
@@ -74,14 +82,49 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-// مسار لجلب جميع الرسائل (ليتم عرضها لاحقاً في لوحة التحكم)
+// مسار لجلب الرسائل النشطة فقط (غير المؤرشفة)
 app.get('/api/contact/messages', async (req, res) => {
   try {
-    const result = await db.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
+    const result = await db.query('SELECT * FROM contact_messages WHERE is_archived = FALSE ORDER BY created_at DESC');
     res.status(200).json(result.rows);
   } catch (err) {
     console.error('Error fetching messages:', err);
     res.status(500).json({ message: 'Fehler beim Abrufen der Nachrichten.' });
+  }
+});
+
+// مسار لجلب الرسائل المؤرشفة فقط
+app.get('/api/contact/messages/archived', async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM contact_messages WHERE is_archived = TRUE ORDER BY created_at DESC');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error fetching archived messages:', err);
+    res.status(500).json({ message: 'Fehler beim Abrufen der archivierten Nachrichten.' });
+  }
+});
+
+// مسار أرشفة رسالة محددة
+app.put('/api/contact/messages/:id/archive', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('UPDATE contact_messages SET is_archived = TRUE WHERE id = $1', [id]);
+    res.status(200).json({ message: 'Nachricht erfolgreich archiviert.' });
+  } catch (err) {
+    console.error('Error archiving message:', err);
+    res.status(500).json({ message: 'Fehler beim Archivieren der Nachricht.' });
+  }
+});
+
+// مسار إلغاء أرشفة رسالة محددة (إعادتها للنشطة)
+app.put('/api/contact/messages/:id/unarchive', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('UPDATE contact_messages SET is_archived = FALSE WHERE id = $1', [id]);
+    res.status(200).json({ message: 'Nachricht erfolgreich wiederhergestellt.' });
+  } catch (err) {
+    console.error('Error unarchiving message:', err);
+    res.status(500).json({ message: 'Fehler beim Wiederherstellen der Nachricht.' });
   }
 });
 

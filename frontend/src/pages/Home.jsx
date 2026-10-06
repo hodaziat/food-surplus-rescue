@@ -111,9 +111,14 @@ const Home = () => {
                   </Link>
 
                   {isAdmin ? (
-                    <Link to="/admin-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
-                      🛡️ Bewertungen verwalten
-                    </Link>
+                    <>
+                      <Link to="/admin-messages" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-success'}`}>
+                        📥 Nachrichten verwalten
+                      </Link>
+                      <Link to="/admin-reviews" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>
+                        🛡️ Bewertungen verwalten
+                      </Link>
+                    </>
                   ) : isDonor ? (
                     <>
                       <Link to="/donor-orders" className={`list-group-item list-group-item-action border-0 px-0 py-1 fw-semibold text-decoration-none small ${isDark ? 'bg-secondary text-light' : 'text-secondary'}`}>

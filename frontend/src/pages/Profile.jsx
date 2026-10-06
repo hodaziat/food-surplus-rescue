@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Container, Card, Form, Button, Alert, Row, Col, Badge } from 'react-bootstrap';
+import { Container, Card, Form, Button, Alert, Row, Col, Badge, ListGroup } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import API from '../services/api';
 
 const Profile = () => {
@@ -21,6 +22,7 @@ const Profile = () => {
 
     // قراءة الدور سواء كان مخزناً بـ role أو user_role أو وضع قيمة افتراضية
     const userRole = user?.role || user?.user_role || 'Nutzer';
+    const isAdmin = userRole.toLowerCase() === 'admin';
 
     // 1. معالجة تحديث البيانات الشخصية
     const handleUpdateProfile = async (e) => {
@@ -29,17 +31,15 @@ const Profile = () => {
         setLoadingProfile(true);
 
         try {
-            // استخدام مسار /auth/ بدلاً من /users/ (تمت إزالة المتغير res غير المستخدم لتجنب التحذيرات)
             await API.put(`/auth/profile/${user.id}`, { name, email });
             
-            // تحديث الكائن المخزن في LocalStorage وفي الـ State
             const updatedUser = { ...user, name, email };
             localStorage.setItem('user', JSON.stringify(updatedUser));
             localStorage.setItem('username', name);
             setUser(updatedUser);
 
             setProfileMsg({ type: 'success', text: 'Profil erfolgreich aktualisiert! (تم تحديث الملف الشخصي بنجاح)' });
-            setTimeout(() => window.location.reload(), 1000); // تحديث الصفحة لتأكيد الاسم في النظامات المجاورة
+            setTimeout(() => window.location.reload(), 1000);
         } catch (err) {
             console.error(err);
             setProfileMsg({ 
@@ -69,7 +69,6 @@ const Profile = () => {
         setLoadingPassword(true);
 
         try {
-            // استخدام مسار /auth/ بدلاً من /users/
             await API.put(`/auth/change-password/${user.id}`, {
                 currentPassword,
                 newPassword
@@ -100,7 +99,7 @@ const Profile = () => {
 
     return (
         <Container className="py-5" style={{ maxWidth: '800px' }}>
-            {/* كارت المعلومات العامة والشهادة */}
+            {/* كارت المعلومات العامة */}
             <Card className="border-0 shadow-sm rounded-4 mb-4 p-4">
                 <div className="d-flex align-items-center justify-content-between mb-3">
                     <div className="d-flex align-items-center gap-3">
@@ -115,13 +114,13 @@ const Profile = () => {
                             <span className="text-muted small">{user.email}</span>
                         </div>
                     </div>
-                    <Badge bg={userRole === 'admin' ? 'danger' : 'success'} className="px-3 py-2 rounded-pill fs-6">
+                    <Badge bg={isAdmin ? 'danger' : 'success'} className="px-3 py-2 rounded-pill fs-6">
                         {userRole.toUpperCase()}
                     </Badge>
                 </div>
             </Card>
 
-            <Row className="g-4">
+            <Row className="g-4 mb-4">
                 {/* 1. قسم تعديل الاسم والإيميل */}
                 <Col md={6}>
                     <Card className="border-0 shadow-sm rounded-4 h-100 p-4">
@@ -171,7 +170,7 @@ const Profile = () => {
 
                         <Form onSubmit={handleChangePassword}>
                             <Form.Group className="mb-3">
-                                <Form.Label className="fw-semibold">Aktuelles Passwort (كلمة المرور الحالية)</Form.Label>
+                                <Form.Label className="fw-semibold">Aktuelles Passwort</Form.Label>
                                 <Form.Control 
                                     type="password" 
                                     value={currentPassword} 
@@ -182,7 +181,7 @@ const Profile = () => {
                             </Form.Group>
 
                             <Form.Group className="mb-3">
-                                <Form.Label className="fw-semibold">Neues Passwort (كلمة المرور الجديدة)</Form.Label>
+                                <Form.Label className="fw-semibold">Neues Passwort</Form.Label>
                                 <Form.Control 
                                     type="password" 
                                     value={newPassword} 
@@ -193,7 +192,7 @@ const Profile = () => {
                             </Form.Group>
 
                             <Form.Group className="mb-4">
-                                <Form.Label className="fw-semibold">Neues Passwort bestätigen (تأكيد كلمة المرور)</Form.Label>
+                                <Form.Label className="fw-semibold">Neues Passwort bestätigen</Form.Label>
                                 <Form.Control 
                                     type="password" 
                                     value={confirmPassword} 
@@ -215,6 +214,21 @@ const Profile = () => {
                     </Card>
                 </Col>
             </Row>
+
+            {/* قسم الروابط السريعة (Schnelllinks) */}
+            <Card className="border-0 shadow-sm rounded-4 p-4">
+                <h5 className="fw-bold text-dark mb-3">🔗 Schnelllinks</h5>
+                <ListGroup variant="flush">
+                    {isAdmin && (
+                        <ListGroup.Item as={Link} to="/admin-messages" className="list-group-item-action border-0 py-2 text-success fw-semibold text-decoration-none">
+                            📥 Nachrichten verwalten (إدارة الرسائل)
+                        </ListGroup.Item>
+                    )}
+                    <ListGroup.Item as={Link} to="/admin-reviews" className="list-group-item-action border-0 py-2 text-primary fw-semibold text-decoration-none">
+                        🛡️ Bewertungen verwalten (إدارة التقييمات)
+                    </ListGroup.Item>
+                </ListGroup>
+            </Card>
         </Container>
     );
 };

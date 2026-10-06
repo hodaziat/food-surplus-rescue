@@ -25,6 +25,7 @@ import DonorReviewsPage from './pages/DonorReviewsPage';
 import AdminReviewsPage from './pages/AdminReviewsPage'; 
 import DonorOrdersPage from './pages/DonorOrdersPage';
 import Datenschutz from './pages/Datenschutz';
+import AdminMessages from './pages/AdminMessages'; // استدعاء صفحة رسائل لوحة التحكم
 
 // ثابث مدة الصلاحية: ساعة واحدة بالملي ثانية (60 دقيقة × 60 ثانية × 1000)
 const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
@@ -154,6 +155,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminReviewsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin-messages" 
+              element={
+                <ProtectedRoute>
+                  <AdminMessages />
                 </ProtectedRoute>
               } 
             />
