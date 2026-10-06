@@ -26,6 +26,7 @@ import AdminReviewsPage from './pages/AdminReviewsPage';
 import DonorOrdersPage from './pages/DonorOrdersPage';
 import Datenschutz from './pages/Datenschutz';
 import AdminMessages from './pages/AdminMessages'; // استدعاء صفحة رسائل لوحة التحكم
+import AdminSpecialRequests from './pages/AdminSpecialRequests';
 
 // ثابث مدة الصلاحية: ساعة واحدة بالملي ثانية (60 دقيقة × 60 ثانية × 1000)
 const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
@@ -108,6 +109,7 @@ function App() {
             <Route path="/food/:id" element={<FoodDetails />} />
             <Route path="/special-request" element={<SpecialRequest />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
+            <Route path="/admin/special-requests" element={<AdminSpecialRequests />} />
 
             {/* المسارات المحمية */}
             <Route 

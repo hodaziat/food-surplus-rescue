@@ -18,6 +18,9 @@ const SpecialRequest = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // حساب تاريخ اليوم بصيغة YYYY-MM-DD لمنع اختيار التواريخ القديمة
+  const today = new Date().toISOString().split('T')[0];
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -28,7 +31,7 @@ const SpecialRequest = () => {
     setError('');
 
     try {
-      await API.post('/special-requests', formData).catch(() => {});
+      await API.post('/special-requests', formData);
       setSubmitted(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler beim Senden der Anfrage. Bitte versuchen Sie es erneut.');
@@ -137,6 +140,7 @@ const SpecialRequest = () => {
                     className="form-control py-2 rounded-3"
                     name="requestedQuantity"
                     placeholder="z.B. 50"
+                    min="1"
                     value={formData.requestedQuantity}
                     onChange={handleChange}
                     required
@@ -149,6 +153,7 @@ const SpecialRequest = () => {
                     type="date"
                     className="form-control py-2 rounded-3"
                     name="eventDate"
+                    min={today} // <-- هنا تم منع اختيار أي تاريخ قديم
                     value={formData.eventDate}
                     onChange={handleChange}
                     required

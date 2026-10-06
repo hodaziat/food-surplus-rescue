@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 
 const AdminMessages = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [viewArchived, setViewArchived] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ const AdminMessages = () => {
 
   return (
     <div className="container py-5">
-      {/* رأس الصفحة مع عداد بصري */}
+      {/* رأس الصفحة مع عداد بصري وأزرار التنقل */}
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div className="d-flex align-items-center gap-3">
           <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm" style={{ width: '55px', height: '55px' }}>
@@ -63,13 +65,22 @@ const AdminMessages = () => {
           </div>
         </div>
 
-        <div className="d-flex gap-2">
+        <div className="d-flex flex-wrap gap-2">
+          {/* زر الانتقال لصفحة طلبات المؤسسات والجمعيات */}
+          <button 
+            onClick={() => navigate('/admin/special-requests')} 
+            className="btn btn-success btn-sm rounded-pill px-3 shadow-sm fw-semibold"
+          >
+            🤝 Sonderanfragen anzeigen
+          </button>
+
           <button 
             onClick={() => setViewArchived(!viewArchived)} 
             className="btn btn-outline-secondary btn-sm fw-semibold rounded-pill px-3 shadow-sm"
           >
             {viewArchived ? '📥 Aktive anzeigen' : '📁 Archiv anzeigen'}
           </button>
+          
           <button onClick={fetchMessages} className="btn btn-outline-success btn-sm rounded-pill px-3 shadow-sm">
             🔄 Aktualisieren
           </button>

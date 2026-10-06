@@ -12,6 +12,7 @@ const donorReviewRoutes = require('./routes/donorReviewRoutes');
 const authRoutes = require('./routes/auth');
 const foodRoutes = require('./routes/food');
 const reservationRoutes = require('./routes/reservation');
+const specialRequestRoutes = require('./routes/specialRequest');
 
 const app = express();
 
@@ -28,6 +29,31 @@ app.use('/api/food', foodRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/site-reviews', siteReviewRoutes);
 app.use('/api/donor-reviews', donorReviewRoutes);
+app.use('/api/special-requests', specialRequestRoutes);
+
+// إنشاء جدول طلبات المؤسسات والجمعيات (Special Requests) تلقائياً عند التشغيل
+const createSpecialRequestsTable = async () => {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS special_requests (
+        id SERIAL PRIMARY KEY,
+        organization_name VARCHAR(255) NOT NULL,
+        contact_person VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50),
+        requested_quantity INTEGER NOT NULL,
+        event_date DATE NOT NULL,
+        details TEXT,
+        is_archived BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('🤝 Special requests table is ready.');
+  } catch (err) {
+    console.error('Error creating special_requests table:', err);
+  }
+};
+createSpecialRequestsTable();
 
 // إنشاء جدول الرسائل وإضافة عمود الأرشفة تلقائياً إذا كان الجدول قديماً
 const createContactTable = async () => {
