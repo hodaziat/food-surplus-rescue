@@ -79,23 +79,59 @@ const Footer = () => {
           <div className="col-lg-3 col-md-6 d-flex flex-column justify-content-between">
             <div>
               <h6 className="fw-bold text-white mb-3 border-start border-success border-3 ps-2">📞 Kontakt & Info</h6>
+              
+              {/* العنوان مع رابط خرائط جوجل */}
               <p className="text-white-50 mb-1" style={{ fontSize: '0.88rem' }}>
-                📍 Berliner Ring 45, 91052 Erlangen
+                📍{' '}
+                <a 
+                  href="https://www.google.com/maps/search/?api=1&query=Berliner+Ring+45,+91052+Erlangen" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-white-50 text-decoration-underline"
+                >
+                  Berliner Ring 45, 91052 Erlangen
+                </a>
               </p>
+
+              {/* رقم الهاتف مع رابط واتساب مباشر */}
               <p className="text-white-50 mb-1" style={{ fontSize: '0.88rem' }}>
-                📞 +49 9131 456789
+                📞{' '}
+                <a 
+                  href="https://wa.me/499131456789" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-white-50 text-decoration-underline"
+                >
+                  +49 9131 456789
+                </a>
               </p>
+
+              {/* البريد الإلكتروني مع رابط Mailto */}
               <p className="text-white-50 mb-3" style={{ fontSize: '0.88rem' }}>
-                ✉️ kontakt@foodsurplus-erlangen.de
+                ✉️{' '}
+                <a href="mailto:kontakt@foodsurplus-erlangen.de" className="text-white-50 text-decoration-underline">
+                  kontakt@foodsurplus-erlangen.de
+                </a>
               </p>
             </div>
+
             <div>
               <span className="text-white-50 d-block small mb-2">Folgen Sie uns:</span>
               <div className="d-flex gap-2">
-                <a href="#facebook" className="btn btn-sm btn-outline-success fw-bold px-3 rounded-pill">
+                <a 
+                  href="https://facebook.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="btn btn-sm btn-outline-success fw-bold px-3 rounded-pill"
+                >
                   Facebook
                 </a>
-                <a href="#instagram" className="btn btn-sm btn-outline-success fw-bold px-3 rounded-pill">
+                <a 
+                  href="https://instagram.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="btn btn-sm btn-outline-success fw-bold px-3 rounded-pill"
+                >
                   Instagram
                 </a>
               </div>

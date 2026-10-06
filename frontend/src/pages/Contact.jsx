@@ -13,7 +13,6 @@ const Contact = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // جلب اسم وبريد المستخدم المسجل دخولاً تلقائياً عند فتح الصفحة
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem('user');
@@ -78,10 +77,62 @@ const Contact = () => {
             <div className="card-body p-4 d-flex flex-column justify-content-between">
               <div>
                 <h5 className="card-title fw-bold mb-4">Kontaktdaten</h5>
-                <p className="mb-3"><strong>Adresse:</strong> Berliner Ring 45, 91052 Erlangen</p>
-                <p className="mb-3"><strong>Telefon:</strong> +49 9131 456789</p>
-                <p className="mb-3"><strong>E-Mail:</strong> kontakt@foodsurplus-erlangen.de</p>
+                
+                <p className="mb-3">
+                  <strong>Adresse:</strong>{' '}
+                  <a 
+                    href="https://www.google.com/maps/search/?api=1&query=Berliner+Ring+45,+91052+Erlangen" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-white text-decoration-underline"
+                  >
+                    Berliner Ring 45, 91052 Erlangen
+                  </a>
+                </p>
+
+                {/* رقم الهاتف مع رابط واتساب */}
+                <p className="mb-3">
+                  <strong>Telefon:</strong>{' '}
+                <a 
+                href="https://api.whatsapp.com/send?phone=499131456789" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-white text-decoration-underline"
+                >
+                  +49 9131 456789 (WhatsApp)
+                </a>
+                </p>
+
+                <p className="mb-3">
+                  <strong>E-Mail:</strong>{' '}
+                  <a href="mailto:kontakt@foodsurplus-erlangen.de" className="text-white text-decoration-underline">
+                    kontakt@foodsurplus-erlangen.de
+                  </a>
+                </p>
               </div>
+
+              <div className="mt-4">
+                <p className="mb-2 fw-semibold small">Folgen Sie uns:</p>
+                <div className="d-flex gap-2">
+                  <a 
+                    href="https://facebook.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-outline-light btn-sm rounded-pill px-3 fw-bold"
+                  >
+                    Facebook
+                  </a>
+                  <a 
+                    href="https://instagram.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-outline-light btn-sm rounded-pill px-3 fw-bold"
+                  >
+                    Instagram
+                  </a>
+                </div>
+              </div>
+
               <div className="mt-4 pt-3 border-top border-light opacity-75">
                 <small>Wir sind bestrebt, alle Anfragen so schnell wie möglich zu beantworten.</small>
               </div>
