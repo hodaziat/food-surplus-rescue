@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// تحديد عنوان الـ API ديناميكياً بناءً على عنوان الجهاز الذي فتح الموقع
+const hostname = window.location.hostname;
+const API_BASE_URL = `http://${hostname}:5000/api`;
+
 const API = axios.create({
-    baseURL: 'http://10.3.47.105:5000/api',
+    baseURL: API_BASE_URL,
 });
 
 // إرفاق التوكين مع كل طلب بشكل آلي

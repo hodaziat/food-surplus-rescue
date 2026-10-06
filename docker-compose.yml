@@ -13,6 +13,8 @@ services:
       - PGDATABASE=food_surplus_db
       - PGPORT=5432
       - JWT_SECRET=my_super_secret_key_123
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always
 
   frontend:

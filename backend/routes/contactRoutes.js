@@ -19,8 +19,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// مسار لجلب الرسائل النشطة (لوحة التحكم)
-router.get('/', async (req, res) => {
+// مسار لجلب الرسائل النشطة (دعم الطلب على / و على /messages)
+router.get(['/', '/messages'], async (req, res) => {
   try {
     const messages = await Contact.findAllActive();
     res.json(messages);
