@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 
 // المكونات الأساسية (Components)
 import Navbar from './components/Navbar';
@@ -25,8 +26,16 @@ import DonorReviewsPage from './pages/DonorReviewsPage';
 import AdminReviewsPage from './pages/AdminReviewsPage'; 
 import DonorOrdersPage from './pages/DonorOrdersPage';
 import Datenschutz from './pages/Datenschutz';
-import AdminMessages from './pages/AdminMessages'; // استدعاء صفحة رسائل لوحة التحكم
+import AdminMessages from './pages/AdminMessages'; 
 import AdminSpecialRequests from './pages/AdminSpecialRequests';
+import CheckoutPage from './pages/CheckoutPage'; // صفحة الدفع عبر بايبال الجديدة
+
+// إعدادات بايبال التجريبية (Sandbox)
+const paypalOptions = {
+  "client-id": "test", // استبدل "test" بـ Client ID الخاص بك من لوحة مطوري بايبال لاحقاً إن أردت
+  currency: "EUR",
+  intent: "capture",
+};
 
 // ثابث مدة الصلاحية: ساعة واحدة بالملي ثانية (60 دقيقة × 60 ثانية × 1000)
 const ONE_HOUR_MS = 1 * 60 * 60 * 1000;
@@ -40,7 +49,6 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // إذا مرت أكثر من ساعة، نرفع بيانات الجلسة ونحوله لصفحة Login
   if (Date.now() - parseInt(loginTime, 10) > ONE_HOUR_MS) {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
@@ -55,7 +63,6 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   const [user, setUser] = useState(null);
 
-  // دالة تسجيل الخروج
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
@@ -64,12 +71,10 @@ function App() {
     setUser(null);
   };
 
-  // دالة تسجيل الدخول
   const handleLogin = (username) => {
     setUser(username);
   };
 
-  // فحص تلقائي للجلسة عند التحميل ومع كل دقيقة أثناء استخدام الموقع
   useEffect(() => {
     const checkAuthTimeout = () => {
       const loginTime = localStorage.getItem('loginTime');
@@ -86,121 +91,54 @@ function App() {
     };
 
     checkAuthTimeout();
-    const interval = setInterval(checkAuthTimeout, 60000); // يفحص تلقائياً كل دقيقة
+    const interval = setInterval(checkAuthTimeout, 60000);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <Router>
-      <div className="d-flex flex-column min-vh-100 position-relative">
-        <Navbar user={user} onLogout={handleLogout} />
-        
-        <div className="flex-grow-1">
-          <Routes>
-            {/* المسارات العامة */}
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/partners" element={<Partners />} />
-            <Route path="/login" element={<Login onLogin={handleLogin} />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/food/:id" element={<FoodDetails />} />
-            <Route path="/special-request" element={<SpecialRequest />} />
-            <Route path="/datenschutz" element={<Datenschutz />} />
-            <Route path="/admin/special-requests" element={<AdminSpecialRequests />} />
+    <PayPalScriptProvider options={paypalOptions}>
+      <Router>
+        <div className="d-flex flex-column min-vh-100 position-relative">
+          <Navbar user={user} onLogout={handleLogout} />
+          
+          <div className="flex-grow-1">
+            <Routes>
+              {/* المسارات العامة */}
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/partners" element={<Partners />} />
+              <Route path="/login" element={<Login onLogin={handleLogin} />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/food/:id" element={<FoodDetails />} />
+              <Route path="/special-request" element={<SpecialRequest />} />
+              <Route path="/datenschutz" element={<Datenschutz />} />
+              <Route path="/admin/special-requests" element={<AdminSpecialRequests />} />
 
-            {/* المسارات المحمية */}
-            <Route 
-              path="/add-food" 
-              element={
-                <ProtectedRoute>
-                  <AddFood />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/add-listing" 
-              element={
-                <ProtectedRoute>
-                  <AddFood />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/edit-food/:id" 
-              element={
-                <ProtectedRoute>
-                  <EditFood />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/donor-orders" 
-              element={
-                <ProtectedRoute>
-                  <DonorOrdersPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/donor-reviews" 
-              element={
-                <ProtectedRoute>
-                  <DonorReviewsPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin-reviews" 
-              element={
-                <ProtectedRoute>
-                  <AdminReviewsPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin-messages" 
-              element={
-                <ProtectedRoute>
-                  <AdminMessages />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/reservations" 
-              element={
-                <ProtectedRoute>
-                  <Reservations />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
+              {/* مسار التبرع / الدفع الوهمي عبر بايبال */}
+              <Route path="/checkout" element={<CheckoutPage />} />
+
+              {/* المسارات المحمية */}
+              <Route path="/add-food" element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
+              <Route path="/add-listing" element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
+              <Route path="/edit-food/:id" element={<ProtectedRoute><EditFood /></ProtectedRoute>} />
+              <Route path="/donor-orders" element={<ProtectedRoute><DonorOrdersPage /></ProtectedRoute>} />
+              <Route path="/donor-reviews" element={<ProtectedRoute><DonorReviewsPage /></ProtectedRoute>} />
+              <Route path="/admin-reviews" element={<ProtectedRoute><AdminReviewsPage /></ProtectedRoute>} />
+              <Route path="/admin-messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            </Routes>
+          </div>
+
+          <ChatWidget />
+          <Footer />
         </div>
-
-        {/* المساعد التفاعلي (الشات) في الزاوية */}
-        <ChatWidget />
-
-        <Footer />
-      </div>
-    </Router>
+      </Router>
+    </PayPalScriptProvider>
   );
 }
 
