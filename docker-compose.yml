@@ -5,6 +5,8 @@ services:
     build: ./backend
     ports:
       - "5000:5000"
+    volumes:
+      - ./backend/uploads:/app/uploads   # <--- أضفنا هذا السطر هنا لربط مجلد الـ uploads المحلي
     environment:
       - PORT=5000
       - PGHOST=host.docker.internal

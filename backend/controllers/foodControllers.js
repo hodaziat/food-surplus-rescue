@@ -60,8 +60,9 @@ const getAllFoodListings = async (req, res) => {
 
         if (expiredItems.rows.length > 0) {
             for (const item of expiredItems.rows) {
-                if (item.image_url && item.image_url.startsWith('/uploads/')) {
-                    const filePath = path.join(__dirname, '..', item.image_url);
+                if (item.image_url) {
+                    const filename = path.basename(item.image_url);
+                    const filePath = path.join(__dirname, '../uploads', filename);
                     if (fs.existsSync(filePath)) {
                         fs.unlinkSync(filePath);
                     }
@@ -104,7 +105,7 @@ const getAllFoodListings = async (req, res) => {
             const totalQty = parseInt(String(item.quantity).replace(/\D/g, ''), 10) || 0;
             const otherPendingQty = parseInt(item.other_pending_reservations, 10) || 0;
             
-            // المتاح الفلي لك = الإجمالي مطروح منه ما حجزه المستخدمون الآخرون فقط
+            // المتاح الفعلي لك = الإجمالي مطروح منه ما حجزه المستخدمون الآخرون فقط
             const availableQty = Math.max(0, totalQty - otherPendingQty);
 
             return {
@@ -161,8 +162,9 @@ const updateFoodListing = async (req, res) => {
         let imageUrl = currentFood.rows[0].image_url;
 
         if (req.file) {
-            if (imageUrl && imageUrl.startsWith('/uploads/')) {
-                const oldFilePath = path.join(__dirname, '..', imageUrl);
+            if (imageUrl) {
+                const oldFilename = path.basename(imageUrl);
+                const oldFilePath = path.join(__dirname, '../uploads', oldFilename);
                 if (fs.existsSync(oldFilePath)) {
                     fs.unlinkSync(oldFilePath);
                 }
@@ -201,7 +203,7 @@ const updateFoodListing = async (req, res) => {
     }
 };
 
-// 5. حذف إعلان طعام
+// 5. حذف إعلان طعام (مع الحذف المضمون للصورة من مجلد uploads)
 const deleteFoodListing = async (req, res) => {
     const { id } = req.params;
 
@@ -211,8 +213,9 @@ const deleteFoodListing = async (req, res) => {
         if (foodResult.rows.length > 0) {
             const imageUrl = foodResult.rows[0].image_url;
 
-            if (imageUrl && imageUrl.startsWith('/uploads/')) {
-                const filePath = path.join(__dirname, '..', imageUrl);
+            if (imageUrl) {
+                const filename = path.basename(imageUrl);
+                const filePath = path.join(__dirname, '../uploads', filename);
                 if (fs.existsSync(filePath)) {
                     fs.unlinkSync(filePath);
                 }
