@@ -62,7 +62,7 @@ const getAllFoodListings = async (req, res) => {
             for (const item of expiredItems.rows) {
                 if (item.image_url) {
                     const filename = path.basename(item.image_url);
-                    const filePath = path.join(__dirname, '../uploads', filename);
+                    const filePath = path.join(process.cwd(), 'uploads', filename);
                     if (fs.existsSync(filePath)) {
                         fs.unlinkSync(filePath);
                     }
@@ -164,7 +164,7 @@ const updateFoodListing = async (req, res) => {
         if (req.file) {
             if (imageUrl) {
                 const oldFilename = path.basename(imageUrl);
-                const oldFilePath = path.join(__dirname, '../uploads', oldFilename);
+                const oldFilePath = path.join(process.cwd(), 'uploads', oldFilename);
                 if (fs.existsSync(oldFilePath)) {
                     fs.unlinkSync(oldFilePath);
                 }
@@ -215,9 +215,17 @@ const deleteFoodListing = async (req, res) => {
 
             if (imageUrl) {
                 const filename = path.basename(imageUrl);
-                const filePath = path.join(__dirname, '../uploads', filename);
+                const filePath = path.join(process.cwd(), 'uploads', filename);
+
+                console.log('--- محاولة حذف صورة ---');
+                console.log('اسم الملف المستخرج:', filename);
+                console.log('المسار الكامل للبحث:', filePath);
+
                 if (fs.existsSync(filePath)) {
                     fs.unlinkSync(filePath);
+                    console.log('تم حذف الصورة من القرص بنجاح!');
+                } else {
+                    console.log('الملف غير موجود بهذا المسار على القرص.');
                 }
             }
         }

@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ChatWidget from './components/ChatWidget';
+import BackToHomeButton from './components/BackToHomeButton';
 
 // الصفحات (Pages)
 import Home from './pages/Home';
@@ -129,6 +130,11 @@ function App() {
             {/* تحويل أي مسار غير معروف للصفحة الرئيسية لمنع الشاشة البيضاء */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+        </div>
+
+        {/* زر الرجوع للرئيسية الثابت فوق الفوتر لكل الصفحات الفرعية */}
+        <div className="container my-3">
+          <BackToHomeButton />
         </div>
 
         <ChatWidget />

@@ -8,10 +8,13 @@ const Navbar = () => {
 
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
+  
+  // تحديد الأدوار بدقة
   const isDonor = user && (user.role === 'donor' || user.user_role === 'donor');
+  const isAdmin = user && (user.role === 'admin' || user.user_role === 'admin' || user.is_admin);
 
   const fetchReservationCount = useCallback(async () => {
-    if (!user || !user.id || isDonor) {
+    if (!user || !user.id || isDonor || isAdmin) {
       setReservationCount(0);
       return;
     }
@@ -27,7 +30,7 @@ const Navbar = () => {
     } catch (err) {
       console.error('Fehler beim Laden der Reservierungsanzahl:', err);
     }
-  }, [user, isDonor]);
+  }, [user, isDonor, isAdmin]);
 
   useEffect(() => {
     fetchReservationCount();
@@ -115,7 +118,7 @@ const Navbar = () => {
                   <Link to="/add-food" className="btn btn-success btn-sm fw-semibold" onClick={closeNav}>
                     ➕ Angebot erstellen
                   </Link>
-                ) : (
+                ) : !isAdmin ? (
                   <Link to="/reservations" className="btn btn-outline-success btn-sm position-relative" onClick={closeNav}>
                     🛒 Reservierungen
                     {reservationCount > 0 && (
@@ -124,7 +127,7 @@ const Navbar = () => {
                       </span>
                     )}
                   </Link>
-                )}
+                ) : null}
 
                 <span className="text-muted small fw-semibold ms-2">
                   Hallo, {user.name}
