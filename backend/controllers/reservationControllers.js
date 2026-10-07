@@ -97,10 +97,10 @@ const getUserReservations = async (req, res) => {
                 food_listings.expiration_date,
                 COALESCE(food_listings.price, 0.00) AS price,
                 COALESCE(food_listings.original_price, 0.00) AS original_price
-             FROM reservations 
-             JOIN food_listings ON reservations.food_id = food_listings.id 
-             WHERE reservations.receiver_id = $1 
-             ORDER BY reservations.reserved_at DESC`,
+               FROM reservations 
+               JOIN food_listings ON reservations.food_id = food_listings.id 
+               WHERE reservations.receiver_id = $1 
+               ORDER BY reservations.reserved_at DESC`,
             [userId]
         );
 
@@ -128,12 +128,12 @@ const getDonorOrders = async (req, res) => {
                 users.id AS customer_id,
                 users.name AS customer_name,
                 users.email AS customer_email
-             FROM reservations
-             JOIN food_listings ON reservations.food_id = food_listings.id
-             JOIN users ON reservations.receiver_id = users.id
-             WHERE food_listings.donor_id::text = $1::text
-               AND reservations.status = 'confirmed'
-             ORDER BY reservations.reserved_at DESC`,
+               FROM reservations
+               JOIN food_listings ON reservations.food_id = food_listings.id
+               JOIN users ON reservations.receiver_id = users.id
+               WHERE food_listings.donor_id::text = $1::text
+                 AND reservations.status = 'confirmed'
+               ORDER BY reservations.reserved_at DESC`,
             [donorId]
         );
 
@@ -144,24 +144,38 @@ const getDonorOrders = async (req, res) => {
     }
 };
 
-// 4. إنهاء الشراء وتأكيد الطلب (معدلة خصيصاً لمنع أخطاء الخصم المزدوج)
+// 4. إنهاء الشراء وتأكيد الطلب (محدث للتحقق من وجود الوجبة وعدم حذفها)
 const checkoutReservation = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const resCheck = await pool.query('SELECT food_id, status FROM reservations WHERE id = $1', [id]);
+        // جلب الحجز مع التحقق من وجود الإعلان الأساسي وعدم انتهاء صلاحيته
+        const resCheck = await pool.query(`
+            SELECT reservations.food_id, reservations.status, food_listings.id AS listing_id, food_listings.expiration_date 
+            FROM reservations 
+            LEFT JOIN food_listings ON reservations.food_id = food_listings.id
+            WHERE reservations.id = $1
+        `, [id]);
         
         if (resCheck.rows.length === 0) {
             return res.status(404).json({ message: 'Reservierung nicht gefunden' });
         }
 
-        const food_id = resCheck.rows[0].food_id;
+        const reservationRow = resCheck.rows.min || resCheck.rows[0];
+        const food_id = reservationRow.food_id;
 
-        if (resCheck.rows[0].status !== 'confirmed') {
+        // التحقق مما إذا كان الإعلان قد تم حذفه أو انتهت صلاحيته
+        if (!reservationRow.listing_id || (reservationRow.expiration_date && new Date(reservationRow.expiration_date) < new Date())) {
+            // حذف الحجز التالف أو المنتهي من السلة تلقائياً لكي لا يزعج المستخدم
+            await pool.query('DELETE FROM reservations WHERE id = $1', [id]);
+            return res.status(400).json({ message: 'Dieses Angebot ist leider nicht mehr verfügbar oder abgelaufen.' });
+        }
+
+        if (reservationRow.status !== 'confirmed') {
             // أ. تغيير حالة الحجز إلى مؤكد
             await pool.query("UPDATE reservations SET status = 'confirmed' WHERE id = $1", [id]);
 
-            // ب. خصم واحد مباشر ومضمون في قاعدة البيانات
+            // ب. خصم الكمية المتاحة في قاعدة البيانات
             await pool.query(
                 `UPDATE food_listings 
                  SET quantity = GREATEST(0, (COALESCE(NULLIF(REGEXP_REPLACE(quantity::text, '[^0-9]', '', 'g'), ''), '0')::INTEGER - 1))::text,
