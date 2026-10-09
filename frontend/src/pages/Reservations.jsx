@@ -34,6 +34,11 @@ const Reservations = () => {
     handleCheckout
   } = useReservations();
 
+  // فحص ما إذا كانت هناك وجبات في السلة غير متاحة للطلب (كميتها 0 أو محذوفة/منتهية الصلاحية)
+  const hasUnavailableItems = groupedCartItems.some(
+    (item) => item.maxAvailable === 0 || item.isExpired || item.available_quantity === 0
+  );
+
   if (loading) {
     return (
       <div className="container py-5 text-center">
@@ -177,8 +182,23 @@ const Reservations = () => {
                     <span>Gesamtsumme:</span>
                     <span className="text-success">{finalTotalPrice === 0 ? 'Kostenlos' : `${finalTotalPrice.toFixed(2)} €`}</span>
                   </div>
+
+                  {/* تنبيه يظهر عندما تحذف الوجبة أو تنتهي صلاحيتها */}
+                  {hasUnavailableItems && (
+                    <div className="alert alert-danger py-2 px-3 small rounded-3 mb-3">
+                      ⚠️ Einige Artikel im Warenkorb sind nicht mehr verfügbar oder abgelaufen. Bitte entfernen Sie diese, um fortzufahren.
+                    </div>
+                  )}
+
                   <hr className="my-3 opacity-10" />
-                  <button type="button" className="btn btn-success w-100 fw-bold py-3 rounded-3 shadow-sm" onClick={() => setShowCheckoutModal(true)}>
+                  
+                  {/* زر الشراء يتم تعطيله تلقائياً إذا وُجدت وجبة منتهية الصلاحية أو غير متاحة */}
+                  <button 
+                    type="button" 
+                    disabled={hasUnavailableItems}
+                    className="btn btn-success w-100 fw-bold py-3 rounded-3 shadow-sm" 
+                    onClick={() => setShowCheckoutModal(true)}
+                  >
                     💳 Kauf abschließen
                   </button>
                 </div>

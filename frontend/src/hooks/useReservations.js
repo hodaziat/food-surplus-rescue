@@ -33,7 +33,11 @@ export const useReservations = () => {
 
     try {
       const res = await API.get(`/reservations/user/${userId}`);
-      setReservations(res.data || []);
+      const data = res.data || [];
+      setReservations(data);
+      
+      // إرسال حدث مخصص لتحديث شارة السلة في الـ Navbar فور تنظيف الوجبات المنتهية تلقائياً
+      window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
       console.error('Fehler beim Laden der Reservierungen:', err);
     } finally {
@@ -43,6 +47,16 @@ export const useReservations = () => {
 
   useEffect(() => {
     fetchReservations();
+
+    // الاستماع لأي تحديث خارجي للسلة لإعادة الجلب فوراً
+    const handleCartUpdate = () => {
+      fetchReservations();
+    };
+
+    window.addEventListener('updateCart', handleCartUpdate);
+    return () => {
+      window.removeEventListener('updateCart', handleCartUpdate);
+    };
   }, [fetchReservations]);
 
   const cartItems = reservations.filter((item) => item.status === 'pending' || !item.status);
@@ -85,7 +99,6 @@ export const useReservations = () => {
         receiver_id: user.id
       });
       await fetchReservations();
-      window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
       alert(err.response?.data?.message || 'Leider sind keine weiteren Portionen verfügbar.');
     } finally {
@@ -101,7 +114,6 @@ export const useReservations = () => {
     try {
       await API.delete(`/reservations/${resIdToDelete}`);
       await fetchReservations();
-      window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
       console.error(err);
       alert('Fehler beim Verringern der Menge.');
@@ -119,7 +131,6 @@ export const useReservations = () => {
           await API.delete(`/reservations/${resId}`);
         }
         await fetchReservations();
-        window.dispatchEvent(new Event('updateCart'));
       } catch (err) {
         console.error(err);
         alert('Fehler beim Entfernen.');
@@ -185,8 +196,7 @@ export const useReservations = () => {
       setIsCouponApplied(false);
       setSelectedDonation(0);
       setActiveTab('orders');
-      window.dispatchEvent(new Event('updateCart'));
-      fetchReservations();
+      await fetchReservations();
     }
   };
 
