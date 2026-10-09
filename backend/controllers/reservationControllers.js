@@ -104,7 +104,6 @@ const getUserReservations = async (req, res) => {
                 food_listings.expiration_date,
                 COALESCE(food_listings.price, 0.00) AS price,
                 COALESCE(food_listings.original_price, 0.00) AS original_price,
-                -- فحص مباشر ومباشر للوجبات المحذوفة أو المنتهية للصلاحية
                 CASE 
                     WHEN food_listings.id IS NULL OR food_listings.expiration_date <= NOW() THEN true
                     ELSE false
@@ -183,7 +182,7 @@ const checkoutReservation = async (req, res) => {
 
         if (!reservationRow.listing_id || (reservationRow.expiration_date && new Date(reservationRow.expiration_date) < new Date())) {
             await pool.query('DELETE FROM reservations WHERE id = $1', [id]);
-            return res.status(400).json({ message: 'Dieses Angebot ist leider nicht mehr verfügbar oder abgelaufen.' });
+            return res.status(400).json({ message: 'Dieses Angebot ist leider nicht mehr verfügbar أو abgelaufen.' });
         }
 
         if (reservationRow.status !== 'confirmed') {
@@ -219,7 +218,7 @@ const checkoutReservation = async (req, res) => {
     }
 };
 
-// 5. حذف حجز أو إلغاؤه
+// 5. حذف حجز أو إلغاؤه (قبل الشراء/التأكيد)
 const deleteReservation = async (req, res) => {
     const { id } = req.params;
 
@@ -253,10 +252,31 @@ const deleteReservation = async (req, res) => {
     }
 };
 
+// 6. حذف الطلب المكتمل أو المنتهي نهائياً دون قيود معقدة
+const deleteCompletedOrder = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const checkRes = await pool.query('SELECT * FROM reservations WHERE id = $1', [id]);
+
+        if (checkRes.rows.length === 0) {
+            return res.status(404).json({ message: 'Bestellung nicht gefunden.' });
+        }
+
+        await pool.query('DELETE FROM reservations WHERE id = $1', [id]);
+
+        res.status(200).json({ message: 'Bestellung erfolgreich aus der Historie gelöscht.' });
+    } catch (err) {
+        console.error('Delete Completed Order Error:', err.message);
+        res.status(500).json({ message: 'Serverfehler beim Löschen der Bestellung.' });
+    }
+};
+
 module.exports = {
     createReservation,
     getUserReservations,
     getDonorOrders,
     checkoutReservation,
-    deleteReservation
+    deleteReservation,
+    deleteCompletedOrder
 };

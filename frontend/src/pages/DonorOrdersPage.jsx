@@ -50,6 +50,20 @@ const DonorOrdersPage = () => {
         return () => clearInterval(interval);
     }, [fetchDonorOrders]);
 
+    // دالة حذف الطلب المكتمل أو المنتهي من جهة المطعم
+    const handleDeleteCompletedOrder = async (reservationId) => {
+        if (window.confirm('Möchten Sie diese abgeschlossene Bestellung wirklich aus der Historie löschen?')) {
+            try {
+                await API.delete(`/reservations/completed/${reservationId}`);
+                alert('Bestellung erfolgreich gelöscht.');
+                fetchDonorOrders();
+            } catch (err) {
+                console.error(err);
+                alert(err.response?.data?.message || 'Fehler beim Löschen der Bestellung.');
+            }
+        }
+    };
+
     const handleCancelOrder = async (reservationId) => {
         if (window.confirm('Möchten Sie diese Reservierung wirklich stornieren?')) {
             try {
@@ -115,18 +129,17 @@ const DonorOrdersPage = () => {
                                             const dateParts = parts[0].split('-'); 
                                             const timeParts = parts[1].split(':'); 
                                             if (dateParts.length === 3 && timeParts.length >= 2) {
-                                                formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]} - ${timeParts[0]}:${timeParts[1]}`;
+                                                formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]} ${timeParts[0]}:${timeParts[1]}`;
                                             }
                                         } else {
                                             const d = new Date(ord.reserved_at);
-                                            formattedDate = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} - ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                                            formattedDate = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                                         }
                                     }
 
                                     const now = new Date();
                                     const expDate = ord.expiration_date ? new Date(ord.expiration_date) : null;
 
-                                    // فحص صارم ومضمون: يشمل العلم القادم من الباك إند للوجبة المحذوفة/المنتهية
                                     const isExpiredOrCompleted = 
                                         ord.status === 'completed' || 
                                         ord.status === 'abgeholt' ||
@@ -157,9 +170,20 @@ const DonorOrdersPage = () => {
                                             </td>
                                             <td className="text-end pe-3">
                                                 {isExpiredOrCompleted ? (
-                                                    <Badge bg="secondary" className="px-3 py-2 rounded-pill fw-semibold">
-                                                        Abgeschlossen ✅
-                                                    </Badge>
+                                                    <div className="d-flex justify-content-end align-items-center gap-2">
+                                                        <Badge bg="secondary" className="px-3 py-2 rounded-pill fw-semibold">
+                                                            Abgeschlossen ✅
+                                                        </Badge>
+                                                        {/* زر الحذف يظهر للمطعم فقط عندما ينتهي الطلب أو يتم استلامه */}
+                                                        <Button 
+                                                            variant="outline-danger" 
+                                                            size="sm" 
+                                                            className="rounded-3"
+                                                            onClick={() => handleDeleteCompletedOrder(ord.reservation_id)}
+                                                        >
+                                                            🗑️ Löschen
+                                                        </Button>
+                                                    </div>
                                                 ) : (
                                                     <Button 
                                                         variant="outline-danger" 

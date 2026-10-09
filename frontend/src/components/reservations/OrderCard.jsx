@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import API from '../../services/api';
 
-const OrderCard = ({ order, onDownloadPDF }) => {
+const OrderCard = ({ order, onDownloadPDF, onDeleteSuccess }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
   const now = new Date();
 
   // تحويل تاريخ الصلاحية بدقة ومعالجة التوقيت المحلي
@@ -30,6 +32,24 @@ const OrderCard = ({ order, onDownloadPDF }) => {
   const itemPrice = parseFloat(order.price || 0);
   const donationVal = parseFloat(order.donation_amount || 0);
   const orderTotal = itemPrice + donationVal;
+
+  // دالة حذف الطلب المكتمل أو المنتهي للزبون
+  const handleDeleteCompleted = async () => {
+    if (window.confirm('Möchten Sie diese abgeschlossene Bestellung wirklich aus Ihrer Historie löschen?')) {
+      setIsDeleting(true);
+      try {
+        await API.delete(`/reservations/completed/${order.reservation_id || order.id}`);
+        if (onDeleteSuccess) {
+          onDeleteSuccess();
+        }
+      } catch (err) {
+        console.error('Löschen fehlgeschlagen:', err);
+        alert(err.response?.data?.message || 'Fehler beim Löschen der Bestellung.');
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
 
   return (
     <div className="col-md-12">
@@ -64,12 +84,25 @@ const OrderCard = ({ order, onDownloadPDF }) => {
               </span>
             )}
 
-            <button 
-              className="btn btn-sm btn-outline-success rounded-3 fw-bold mt-1"
-              onClick={() => onDownloadPDF(order, orderTotal, donationVal)}
-            >
-              📄 Beleg herunterladen
-            </button>
+            <div className="d-flex gap-2 mt-1">
+              <button 
+                className="btn btn-sm btn-outline-success rounded-3 fw-bold"
+                onClick={() => onDownloadPDF(order, orderTotal, donationVal)}
+              >
+                📄 Beleg
+              </button>
+
+              {/* يظهر زر الحذف حصراً عندما يصبح الطلب منتهياً أو مستلماً */}
+              {isExpired && (
+                <button 
+                  className="btn btn-sm btn-outline-danger rounded-3 fw-bold"
+                  onClick={handleDeleteCompleted}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? '...' : '🗑️ Löschen'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
