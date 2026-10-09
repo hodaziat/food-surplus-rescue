@@ -35,9 +35,6 @@ export const useReservations = () => {
       const res = await API.get(`/reservations/user/${userId}`);
       const data = res.data || [];
       setReservations(data);
-      
-      // إرسال حدث مخصص لتحديث شارة السلة في الـ Navbar فور تنظيف الوجبات المنتهية تلقائياً
-      window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
       console.error('Fehler beim Laden der Reservierungen:', err);
     } finally {
@@ -48,19 +45,37 @@ export const useReservations = () => {
   useEffect(() => {
     fetchReservations();
 
-    // الاستماع لأي تحديث خارجي للسلة لإعادة الجلب فوراً
+    // تحديث دوري كل 3 ثوانٍ لمتابعة حالة الوجبة حياً عند الزبون
+    const interval = setInterval(() => {
+      fetchReservations();
+    }, 3000);
+
     const handleCartUpdate = () => {
       fetchReservations();
     };
 
     window.addEventListener('updateCart', handleCartUpdate);
     return () => {
+      clearInterval(interval);
       window.removeEventListener('updateCart', handleCartUpdate);
     };
   }, [fetchReservations]);
 
   const cartItems = reservations.filter((item) => item.status === 'pending' || !item.status);
-  const confirmedOrders = reservations.filter((item) => item.status === 'confirmed');
+  
+  // معالجة طلبات الزبون التأكيدية: وسْم الوجبات المنتهية والمحذوفة تلقائياً
+  const confirmedOrders = reservations
+    .filter((item) => item.status === 'confirmed')
+    .map((ord) => {
+      const now = new Date();
+      const expDate = ord.expiration_date ? new Date(ord.expiration_date) : null;
+      const isExpired = ord.is_expired === true || !ord.expiration_date || (expDate && expDate <= now);
+
+      return {
+        ...ord,
+        is_expired: isExpired
+      };
+    });
 
   const groupedCartItems = Object.values(
     cartItems.reduce((acc, item) => {
@@ -99,6 +114,7 @@ export const useReservations = () => {
         receiver_id: user.id
       });
       await fetchReservations();
+      window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
       alert(err.response?.data?.message || 'Leider sind keine weiteren Portionen verfügbar.');
     } finally {
@@ -114,6 +130,7 @@ export const useReservations = () => {
     try {
       await API.delete(`/reservations/${resIdToDelete}`);
       await fetchReservations();
+      window.dispatchEvent(new Event('updateCart'));
     } catch (err) {
       console.error(err);
       alert('Fehler beim Verringern der Menge.');
@@ -131,6 +148,7 @@ export const useReservations = () => {
           await API.delete(`/reservations/${resId}`);
         }
         await fetchReservations();
+        window.dispatchEvent(new Event('updateCart'));
       } catch (err) {
         console.error(err);
         alert('Fehler beim Entfernen.');
@@ -197,6 +215,7 @@ export const useReservations = () => {
       setSelectedDonation(0);
       setActiveTab('orders');
       await fetchReservations();
+      window.dispatchEvent(new Event('updateCart'));
     }
   };
 

@@ -62,12 +62,11 @@ const createReservation = async (req, res) => {
     }
 };
 
-// 2. جلب جميع حجوزات وطلبات المستخدم مع التنظيف التلقائي للوجبات المنتهية/المحذوفة
+// 2. جلب جميع حجوزات وطلبات المستخدم مع التنظيف التلقائي ودعم الوجبات المحذوفة والمنتهية
 const getUserReservations = async (req, res) => {
     const { userId } = req.params;
 
     try {
-        // تنظيف الحجوزات غير المؤكدة للوجبات المنتهية أو المحذوفة
         await pool.query(`
             DELETE FROM reservations 
             WHERE status = 'pending' 
@@ -86,8 +85,8 @@ const getUserReservations = async (req, res) => {
                 reservations.status,
                 reservations.reserved_at,
                 reservations.donation_amount,
-                food_listings.title, 
-                food_listings.description, 
+                COALESCE(food_listings.title, 'Gelöschtes Angebot') AS title, 
+                COALESCE(food_listings.description, 'Keine Beschreibung vorhanden') AS description, 
                 COALESCE(NULLIF(REGEXP_REPLACE(food_listings.quantity::text, '[^0-9]', '', 'g'), ''), '0')::INTEGER AS total_quantity,
                 
                 GREATEST(0, (
@@ -104,9 +103,14 @@ const getUserReservations = async (req, res) => {
                 food_listings.image_url,
                 food_listings.expiration_date,
                 COALESCE(food_listings.price, 0.00) AS price,
-                COALESCE(food_listings.original_price, 0.00) AS original_price
+                COALESCE(food_listings.original_price, 0.00) AS original_price,
+                -- فحص مباشر ومباشر للوجبات المحذوفة أو المنتهية للصلاحية
+                CASE 
+                    WHEN food_listings.id IS NULL OR food_listings.expiration_date <= NOW() THEN true
+                    ELSE false
+                END AS is_expired
                FROM reservations 
-               JOIN food_listings ON reservations.food_id = food_listings.id 
+               LEFT JOIN food_listings ON reservations.food_id = food_listings.id 
                WHERE reservations.receiver_id = $1 
                ORDER BY reservations.reserved_at DESC`,
             [userId]
@@ -119,7 +123,7 @@ const getUserReservations = async (req, res) => {
     }
 };
 
-// 3. جلب جميع طلبات المتبرع/المطعم المؤكدة
+// 3. جلب جميع طلبات المتبرع/المطعم المؤكدة مع معالجة الوجبات المحذوفة والمنتهية
 const getDonorOrders = async (req, res) => {
     const { donorId } = req.params;
 
@@ -131,16 +135,21 @@ const getDonorOrders = async (req, res) => {
                 reservations.status,
                 reservations.donation_amount,
                 food_listings.id AS food_id,
-                food_listings.title AS food_title,
-                food_listings.description AS food_description,
+                COALESCE(food_listings.title, 'Gelöschtes Angebot') AS food_title,
+                COALESCE(food_listings.description, 'Keine Beschreibung vorhanden') AS food_description,
+                food_listings.expiration_date,
                 COALESCE(food_listings.price, 0.00) AS price,
                 users.id AS customer_id,
                 users.name AS customer_name,
-                users.email AS customer_email
+                users.email AS customer_email,
+                CASE 
+                    WHEN food_listings.id IS NULL OR food_listings.expiration_date <= NOW() THEN true
+                    ELSE false
+                END AS is_expired
                FROM reservations
-               JOIN food_listings ON reservations.food_id = food_listings.id
+               LEFT JOIN food_listings ON reservations.food_id = food_listings.id
                JOIN users ON reservations.receiver_id = users.id
-               WHERE food_listings.donor_id::text = $1::text
+               WHERE (food_listings.donor_id::text = $1::text OR food_listings.id IS NULL)
                  AND reservations.status = 'confirmed'
                ORDER BY reservations.reserved_at DESC`,
             [donorId]
@@ -153,7 +162,7 @@ const getDonorOrders = async (req, res) => {
     }
 };
 
-// 4. إنهاء الشراء وتأكيد الطلب مع التحقق الفوري الصارم
+// 4. إنهاء الشراء وتأكيد الطلب
 const checkoutReservation = async (req, res) => {
     const { id } = req.params;
 
@@ -172,7 +181,6 @@ const checkoutReservation = async (req, res) => {
         const reservationRow = resCheck.rows[0];
         const food_id = reservationRow.food_id;
 
-        // التحقق مما إذا كان الإعلان قد أُلغي أو انتهت صلاحيته
         if (!reservationRow.listing_id || (reservationRow.expiration_date && new Date(reservationRow.expiration_date) < new Date())) {
             await pool.query('DELETE FROM reservations WHERE id = $1', [id]);
             return res.status(400).json({ message: 'Dieses Angebot ist leider nicht mehr verfügbar oder abgelaufen.' });
@@ -245,8 +253,10 @@ const deleteReservation = async (req, res) => {
     }
 };
 
-exports.createReservation = createReservation;
-exports.getUserReservations = getUserReservations;
-exports.getDonorOrders = getDonorOrders;
-exports.checkoutReservation = checkoutReservation;
-exports.deleteReservation = deleteReservation;
+module.exports = {
+    createReservation,
+    getUserReservations,
+    getDonorOrders,
+    checkoutReservation,
+    deleteReservation
+};

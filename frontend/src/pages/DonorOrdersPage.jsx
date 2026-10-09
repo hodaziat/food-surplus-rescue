@@ -41,6 +41,13 @@ const DonorOrdersPage = () => {
 
     useEffect(() => {
         fetchDonorOrders();
+
+        // تحديث دوري كل 3 ثوانٍ
+        const interval = setInterval(() => {
+            fetchDonorOrders();
+        }, 3000);
+
+        return () => clearInterval(interval);
     }, [fetchDonorOrders]);
 
     const handleCancelOrder = async (reservationId) => {
@@ -100,10 +107,32 @@ const DonorOrdersPage = () => {
                             </thead>
                             <tbody>
                                 {orders.map((ord) => {
-                                    const dateObj = ord.reserved_at ? new Date(ord.reserved_at) : null;
-                                    const formattedDate = dateObj && !isNaN(dateObj) 
-                                        ? `${dateObj.toLocaleDateString('de-DE')} - ${dateObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` 
-                                        : 'k.A.';
+                                    let formattedDate = 'k.A.';
+                                    if (ord.reserved_at) {
+                                        const str = String(ord.reserved_at);
+                                        const parts = str.split('T');
+                                        if (parts.length >= 2) {
+                                            const dateParts = parts[0].split('-'); 
+                                            const timeParts = parts[1].split(':'); 
+                                            if (dateParts.length === 3 && timeParts.length >= 2) {
+                                                formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]} - ${timeParts[0]}:${timeParts[1]}`;
+                                            }
+                                        } else {
+                                            const d = new Date(ord.reserved_at);
+                                            formattedDate = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} - ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                                        }
+                                    }
+
+                                    const now = new Date();
+                                    const expDate = ord.expiration_date ? new Date(ord.expiration_date) : null;
+
+                                    // فحص صارم ومضمون: يشمل العلم القادم من الباك إند للوجبة المحذوفة/المنتهية
+                                    const isExpiredOrCompleted = 
+                                        ord.status === 'completed' || 
+                                        ord.status === 'abgeholt' ||
+                                        ord.is_expired === true ||
+                                        !ord.expiration_date ||
+                                        (expDate && expDate <= now);
 
                                     return (
                                         <tr key={ord.reservation_id}>
@@ -127,14 +156,20 @@ const DonorOrdersPage = () => {
                                                 <small className="text-muted">{formattedDate}</small>
                                             </td>
                                             <td className="text-end pe-3">
-                                                <Button 
-                                                    variant="outline-danger" 
-                                                    size="sm" 
-                                                    className="rounded-3"
-                                                    onClick={() => handleCancelOrder(ord.reservation_id)}
-                                                >
-                                                    Stornieren ❌
-                                                </Button>
+                                                {isExpiredOrCompleted ? (
+                                                    <Badge bg="secondary" className="px-3 py-2 rounded-pill fw-semibold">
+                                                        Abgeschlossen ✅
+                                                    </Badge>
+                                                ) : (
+                                                    <Button 
+                                                        variant="outline-danger" 
+                                                        size="sm" 
+                                                        className="rounded-3"
+                                                        onClick={() => handleCancelOrder(ord.reservation_id)}
+                                                    >
+                                                        Stornieren ❌
+                                                    </Button>
+                                                )}
                                             </td>
                                         </tr>
                                     );
