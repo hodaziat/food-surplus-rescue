@@ -49,7 +49,7 @@ const Footer = () => {
                 </li>
                 <li className="mb-2">
                   <Link to="/datenschutz" className="text-white-50 text-decoration-none hover-success transition-all">
-                    🔒 Datenschutzerklärung
+                    ▶  Datenschutzerklärung
                   </Link>
                 </li>
               </ul>
@@ -149,7 +149,7 @@ const Footer = () => {
             </p>
             <div>
               <Link to="/datenschutz" className="text-success text-decoration-none small hover-underline">
-                Datenschutzerklärung
+                🔒 Datenschutzerklärung
               </Link>
             </div>
           </div>
