@@ -42,6 +42,7 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
   );
 
   const isAdmin = user && user.role === 'admin';
+  const isDonorAccount = user && (user.role === 'donor' || user.role === 'restaurant');
 
   const availableQty = item.available_quantity !== undefined 
     ? parseInt(item.available_quantity, 10) 
@@ -204,6 +205,22 @@ const FoodCard = ({ item, currentUser, handleDelete, onReserveSuccess }) => {
                     className="btn btn-outline-danger fw-bold py-2 rounded-3 flex-fill"
                   >
                     🗑️ Löschen
+                  </button>
+                </>
+              ) : isDonorAccount ? (
+                <>
+                  <button 
+                    onClick={() => navigate(`/food/${item.id}`)}
+                    className="btn btn-outline-success fw-bold py-2 rounded-3 flex-fill"
+                  >
+                    🔍 Details
+                  </button>
+                  <button 
+                    disabled
+                    className="btn btn-secondary fw-bold py-2 rounded-3 flex-fill"
+                    title="Spender-Konten können keine Angebote reservieren"
+                  >
+                    Nur für Kunden
                   </button>
                 </>
               ) : (

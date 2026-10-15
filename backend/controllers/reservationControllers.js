@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-// 1. إضافة حجز جديد بالسلة
+// 1. إضافة حجز جديد بالسلة (مع حماية حظر حجز المطاعم)
 const createReservation = async (req, res) => {
     const { food_id, receiver_id, donation_amount } = req.body;
 
@@ -9,6 +9,17 @@ const createReservation = async (req, res) => {
     }
 
     try {
+        // ⛔ حماية الباك إند: حظر أي حساب مطعم/متبرع من الحجز
+        const userCheck = await pool.query('SELECT role FROM users WHERE id = $1', [receiver_id]);
+        if (userCheck.rows.length > 0) {
+            const userRole = userCheck.rows[0].role;
+            if (userRole === 'donor' || userRole === 'restaurant') {
+                return res.status(403).json({ 
+                    message: 'Spender- und Restaurant-Konten können keine Angebote reservieren.' 
+                });
+            }
+        }
+
         const foodCheck = await pool.query('SELECT * FROM food_listings WHERE id = $1', [food_id]);
 
         if (foodCheck.rows.length === 0) {
@@ -182,7 +193,7 @@ const checkoutReservation = async (req, res) => {
 
         if (!reservationRow.listing_id || (reservationRow.expiration_date && new Date(reservationRow.expiration_date) < new Date())) {
             await pool.query('DELETE FROM reservations WHERE id = $1', [id]);
-            return res.status(400).json({ message: 'Dieses Angebot ist leider nicht mehr verfügbar أو abgelaufen.' });
+            return res.status(400).json({ message: 'Dieses Angebot ist leider nicht mehr verfügbar oder abgelaufen.' });
         }
 
         if (reservationRow.status !== 'confirmed') {

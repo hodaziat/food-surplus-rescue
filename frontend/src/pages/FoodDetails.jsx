@@ -129,6 +129,8 @@ function FoodDetails() {
     user.name === food.spender
   );
 
+  const isDonorAccount = user && (user.role === 'donor' || user.role === 'restaurant');
+
   return (
     <div className="container my-4">
       <button className="btn btn-outline-secondary mb-3 rounded-3" onClick={() => navigate(-1)}>
@@ -180,8 +182,16 @@ function FoodDetails() {
               <h5 className="fw-bold mb-2">Abholort:</h5>
               <p className="text-secondary">📍 {food.location || 'Erlangen Stadtmitte'}</p>
 
-              {/* زر الحجز المباشر بدون تبرع */}
-              {!isOwner ? (
+              {/* الشروط المحسنة لعرض الأزرار حسب الدور والملكية */}
+              {isOwner ? (
+                <div className="alert alert-info text-center mt-3 rounded-3 mb-0">
+                  Dies ist Ihr eigenes Angebot.
+                </div>
+              ) : isDonorAccount ? (
+                <div className="alert alert-warning text-center mt-3 rounded-3 mb-0 fw-semibold">
+                  🚫 Spender- und Restaurant-Konten können keine Angebote reservieren.
+                </div>
+              ) : (
                 <button 
                   className="btn btn-success btn-lg w-100 mt-3 fw-bold py-2 rounded-3"
                   onClick={handleReserve}
@@ -189,10 +199,6 @@ function FoodDetails() {
                 >
                   {isReserving ? 'Wird reserviert...' : availableQty <= 0 ? 'Ausverkauft' : 'Jetzt Reservieren 🛒'}
                 </button>
-              ) : (
-                <div className="alert alert-info text-center mt-3 rounded-3 mb-0">
-                  Dies ist Ihr eigenes Angebot.
-                </div>
               )}
             </div>
           </div>
